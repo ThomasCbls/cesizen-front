@@ -1,9 +1,9 @@
 import { BrowserRouter } from 'react-router'
-import LogViewPage from './LogView/LogViewPage'
+import HomePage from './home/HomePage/HomePage'
 export default function Home() {
   return (
     <BrowserRouter>
-      <LogViewPage />
+      <HomePage />
     </BrowserRouter>
   )
 }

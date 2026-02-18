@@ -12,9 +12,9 @@ import {
   Typography,
 } from '@mui/material'
 import { Eye, EyeOff, Lock, User } from 'lucide-react'
-import { useState } from 'react'
-import { endpoints } from '../utils/endpoint'
 import Link from 'next/link'
+import { useState } from 'react'
+import { endpoints } from '../../utils/endpoint'
 
 const LogViewPage = () => {
   const [email, setEmail] = useState('')
@@ -76,13 +76,11 @@ const LogViewPage = () => {
         localStorage.setItem('user', JSON.stringify(data.user))
       }
 
-      // Réinitialiser le formulaire
       setEmail('')
       setPassword('')
 
-      // Rediriger après login réussi
       setTimeout(() => {
-        window.location.href = '/dashboard'
+        window.location.href = '/'
       }, 500)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erreur de connexion'

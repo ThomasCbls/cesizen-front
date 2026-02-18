@@ -1,4 +1,3 @@
-// Base URL configuration
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 // API Endpoints
@@ -13,18 +12,17 @@ export const endpoints = {
 
   // User routes
   users: {
-    list: `${BASE_URL}/users`,
-    getById: (id: string) => `${BASE_URL}/users/${id}`,
-    create: `${BASE_URL}/users`,
-    update: (id: string) => `${BASE_URL}/users/${id}`,
-    delete: (id: string) => `${BASE_URL}/users/${id}`,
+    getById: (id: string) => `${BASE_URL}/utilisateurs/${id}`,
+    create: `${BASE_URL}/utilisateurs`,
+    update: (id: string) => `${BASE_URL}/utilisateurs/${id}`,
+    delete: (id: string) => `${BASE_URL}/utilisateurs/${id}`,
   },
 }
 
 // Helper function for API calls
 export const apiCall = async (
   endpoint: string,
-  method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE' = 'GET',
   data?: any,
 ) => {
   try {
@@ -36,7 +34,6 @@ export const apiCall = async (
       credentials: 'include',
     }
 
-    // Ajouter le token d'authentification si disponible
     const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
     if (token) {
       options.headers = {
@@ -45,7 +42,7 @@ export const apiCall = async (
       }
     }
 
-    if (data && (method === 'POST' || method === 'PUT')) {
+    if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
       options.body = JSON.stringify(data)
     }
 

@@ -104,7 +104,7 @@ const RegisterViewPage = () => {
 
       // Rediriger après inscription réussie
       setTimeout(() => {
-        window.location.href = '/dashboard'
+        window.location.href = '/login'
       }, 500)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Erreur d'inscription"
