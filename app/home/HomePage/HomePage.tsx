@@ -1,7 +1,10 @@
 'use client'
 
-import { useLogout } from '@/app/hooks/useLogout'
-import { useUser } from '@/app/hooks/useUser'
+// ======================================================================
+// 🏠 HOME PAGE - Mise à jour avec nouveau système d'auth
+// ======================================================================
+
+import { useRequireAuth } from '@/contexts'
 import {
   AppBar,
   Avatar,
@@ -25,11 +28,21 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
-import { BellRing, BrainIcon, LogIn, LogOut, Newspaper, Settings } from 'lucide-react'
+import {
+  BellRing,
+  BrainIcon,
+  LogOut,
+  Newspaper,
+  Settings,
+  TrendingUp,
+  BarChart3,
+  Target,
+} from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import React from 'react'
 
-// note pour moi : remplacer par fetch depuis le back plus tard
+// Articles temporaires (à remplacer par fetch depuis le backend)
 const adminArticles = [
   {
     id: 1,
@@ -62,15 +75,47 @@ const adminArticles = [
 ]
 
 const HomePage = () => {
-  const { user } = useUser()
-  const { logout } = useLogout()
+  // Nouveau système d'authentification
+  const { user, logout, isLoading } = useRequireAuth()
 
   const theme = useTheme()
-  const [anchorEl, setAnchorEl] = React.useState(null)
+  const router = useRouter()
+  const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
 
-  const handleClick = (event) => setAnchorEl(event.currentTarget)
+  const handleClick = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget)
   const handleClose = () => setAnchorEl(null)
+
+  const handleLogout = async () => {
+    handleClose()
+    await logout()
+  }
+
+  const goToDiagnostic = () => {
+    router.push('/diagnostic')
+  }
+
+  const goToHistory = () => {
+    router.push('/history')
+  }
+
+  const goToSettings = () => {
+    handleClose()
+    router.push('/user-setting')
+  }
+
+  // Affichage de chargement
+  if (isLoading) {
+    return (
+      <Box
+        sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Typography variant="h6" color="textSecondary">
+          Chargement...
+        </Typography>
+      </Box>
+    )
+  }
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f0f4f8' }}>
@@ -95,15 +140,23 @@ const HomePage = () => {
           </Stack>
 
           <Stack direction="row" alignItems="center" gap={2}>
-            <Link href="/questionnaire" style={{ textDecoration: 'none' }}>
-              <Button
-                variant="text"
-                startIcon={<BrainIcon size={18} />}
-                sx={{ display: { xs: 'none', md: 'flex' }, fontWeight: 600 }}
-              >
-                Mon Diagnostic
-              </Button>
-            </Link>
+            <Button
+              variant="text"
+              startIcon={<BrainIcon size={18} />}
+              onClick={goToDiagnostic}
+              sx={{ display: { xs: 'none', md: 'flex' }, fontWeight: 600 }}
+            >
+              Diagnostic
+            </Button>
+
+            <Button
+              variant="text"
+              startIcon={<TrendingUp size={18} />}
+              onClick={goToHistory}
+              sx={{ display: { xs: 'none', md: 'flex' }, fontWeight: 600 }}
+            >
+              Historique
+            </Button>
 
             <IconButton size="small">
               <BellRing size={20} color={theme.palette.text.secondary} />
@@ -156,39 +209,29 @@ const HomePage = () => {
       >
         {user && (
           <>
-            <Link href="/user-setting" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <MenuItem onClick={handleClose}>
-                <ListItemIcon>
-                  <Settings size={16} />
-                </ListItemIcon>
-                Paramètres
-              </MenuItem>
-            </Link>
+            <MenuItem onClick={goToSettings}>
+              <ListItemIcon>
+                <Settings size={16} />
+              </ListItemIcon>
+              Paramètres
+            </MenuItem>
+
+            <MenuItem onClick={goToHistory}>
+              <ListItemIcon>
+                <BarChart3 size={16} />
+              </ListItemIcon>
+              Historique
+            </MenuItem>
+
             <Divider />
 
-            <Link href="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <MenuItem
-                onClick={() => {
-                  handleClose()
-                  logout()
-                }}
-                sx={{ color: 'error.main' }}
-              >
-                <ListItemIcon>
-                  <LogOut size={16} color={theme.palette.error.main} />
-                </ListItemIcon>
-                Déconnexion
-              </MenuItem>
-            </Link>
+            <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+              <ListItemIcon>
+                <LogOut size={16} color={theme.palette.error.main} />
+              </ListItemIcon>
+              Déconnexion
+            </MenuItem>
           </>
-        )}
-        {!user && (
-          <MenuItem onClick={handleClose} component={Link} href="/login">
-            <ListItemIcon>
-              <LogIn size={16} color={theme.palette.success.main} />
-            </ListItemIcon>
-            Se connecter
-          </MenuItem>
         )}
       </Menu>
       <Container maxWidth="lg" sx={{ py: 4 }}>
@@ -217,21 +260,21 @@ const HomePage = () => {
               votre niveau de stress actuel.
             </Typography>
           </Box>
-          <Link href="/questionnaire" style={{ textDecoration: 'none' }}>
-            <Button
-              variant="contained"
-              sx={{
-                bgcolor: 'white',
-                color: 'primary.main',
-                fontWeight: 'bold',
-                px: 4,
-                py: 1.5,
-                '&:hover': { bgcolor: '#f5f5f5' },
-              }}
-            >
-              Commencer le questionnaire
-            </Button>
-          </Link>
+          <Button
+            variant="contained"
+            onClick={goToDiagnostic}
+            startIcon={<Target />}
+            sx={{
+              bgcolor: 'white',
+              color: 'primary.main',
+              fontWeight: 'bold',
+              px: 4,
+              py: 1.5,
+              '&:hover': { bgcolor: '#f5f5f5' },
+            }}
+          >
+            Commencer un Diagnostic
+          </Button>
         </Box>
         <Box sx={{ mb: 4 }}>
           <Stack direction="row" alignItems="center" gap={1} mb={3}>
@@ -241,74 +284,73 @@ const HomePage = () => {
             </Typography>
           </Stack>
 
-          <Grid container spacing={3}>
+          <Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={3}>
             {adminArticles.map((article) => (
-              <Grid item xs={12} sm={6} md={4} key={article.id}>
-                <Card
-                  elevation={0}
+              <Card
+                key={article.id}
+                elevation={0}
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: 3,
+                  transition: '0.3s',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  },
+                }}
+              >
+                <CardActionArea
                   sx={{
-                    height: '100%',
+                    flexGrow: 1,
                     display: 'flex',
                     flexDirection: 'column',
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 3,
-                    transition: '0.3s',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                    },
+                    alignItems: 'flex-start',
                   }}
                 >
-                  <CardActionArea
-                    sx={{
-                      flexGrow: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-start',
-                    }}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="180"
-                      image={article.image}
-                      alt={article.title}
-                    />
-                    <CardContent>
-                      <Stack
-                        direction="row"
-                        justifyContent="space-between"
-                        alignItems="center"
-                        mb={1}
-                      >
-                        <Chip
-                          label={article.category}
-                          size="small"
-                          color="primary"
-                          variant="outlined"
-                        />
-                        <Typography variant="caption" color="text.secondary">
-                          {article.date}
-                        </Typography>
-                      </Stack>
-                      <Typography
-                        gutterBottom
-                        variant="h6"
-                        component="div"
-                        fontWeight="bold"
-                        lineHeight={1.2}
-                      >
-                        {article.title}
+                  <CardMedia
+                    component="img"
+                    height="180"
+                    image={article.image}
+                    alt={article.title}
+                  />
+                  <CardContent>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      mb={1}
+                    >
+                      <Chip
+                        label={article.category}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                      />
+                      <Typography variant="caption" color="text.secondary">
+                        {article.date}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {article.summary}
-                      </Typography>
-                    </CardContent>
-                  </CardActionArea>
-                </Card>
-              </Grid>
+                    </Stack>
+                    <Typography
+                      gutterBottom
+                      variant="h6"
+                      component="div"
+                      fontWeight="bold"
+                      lineHeight={1.2}
+                    >
+                      {article.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {article.summary}
+                    </Typography>
+                  </CardContent>
+                </CardActionArea>
+              </Card>
             ))}
-          </Grid>
+          </Box>
         </Box>
       </Container>
     </Box>

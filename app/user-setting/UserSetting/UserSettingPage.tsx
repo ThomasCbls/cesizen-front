@@ -2,6 +2,7 @@
 
 import { useUser } from '@/app/hooks/useUser'
 import { apiCall, endpoints } from '@/app/utils/endpoint'
+import type { User } from '@/types'
 import {
   Alert,
   AppBar,
@@ -22,7 +23,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
-import { ArrowLeft, Camera, Lock, Mail, Save, ShieldCheck, User } from 'lucide-react'
+import { ArrowLeft, Camera, Lock, Mail, Save, ShieldCheck, User as UserIcon } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
 
@@ -43,14 +44,16 @@ const UserSettingPage = () => {
 
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' })
 
-  const handleProfileChange = (e) => {
+  const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value })
   }
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setPasswordData({ ...passwordData, [e.target.name]: e.target.value })
   }
   const handleSaveProfile = async () => {
+    if (!user?.id) return
+
     try {
       const updateData = {
         prenom: profileData.prenom,
@@ -58,8 +61,8 @@ const UserSettingPage = () => {
         email: profileData.email,
       }
 
-      await apiCall(endpoints.users.update(user?.id), 'PATCH', updateData)
-      console.log('🚀 ~ handleSaveProfile ~ endpoints.users:', endpoints.users.update(user?.id))
+      await apiCall(endpoints.users.update(user.id), 'PATCH', updateData)
+      console.log('🚀 ~ handleSaveProfile ~ endpoints.users:', endpoints.users.update(user.id))
 
       if (user) {
         setUser({ ...user, ...updateData })
@@ -82,6 +85,8 @@ const UserSettingPage = () => {
   }
 
   const handleSavePassword = async () => {
+    if (!user?.id) return
+
     // Validation basique
     if (passwordData.new !== passwordData.confirm) {
       setSnackbar({
@@ -102,7 +107,7 @@ const UserSettingPage = () => {
     }
 
     try {
-      await apiCall(endpoints.users.update(user?.id), 'PATCH', {
+      await apiCall(endpoints.users.update(user.id), 'PATCH', {
         current_password: passwordData.current,
         mot_de_passe: passwordData.new,
       })
@@ -199,7 +204,7 @@ const UserSettingPage = () => {
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <User size={18} />
+                              <UserIcon size={18} />
                             </InputAdornment>
                           ),
                         }}
@@ -215,7 +220,7 @@ const UserSettingPage = () => {
                         InputProps={{
                           startAdornment: (
                             <InputAdornment position="start">
-                              <User size={18} />
+                              <UserIcon size={18} />
                             </InputAdornment>
                           ),
                         }}
@@ -349,7 +354,7 @@ const UserSettingPage = () => {
       >
         <Alert
           onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
+          severity={snackbar.severity as 'success' | 'info' | 'warning' | 'error'}
           sx={{ width: '100%' }}
         >
           {snackbar.message}

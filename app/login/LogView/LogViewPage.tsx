@@ -1,4 +1,8 @@
-'use client'
+﻿'use client'
+
+// ======================================================================
+// ðŸ”‘ LOGIN VIEW PAGE - Mise Ã  jour avec nouveau systÃ¨me d'auth
+// ======================================================================
 
 import {
   Alert,
@@ -14,82 +18,73 @@ import {
 import { Eye, EyeOff, Lock, User } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
-import { endpoints } from '../../utils/endpoint'
+import { useRouter } from 'next/navigation'
+
+import { useAuth, usePublicRoute } from '@/contexts'
+import type { LoginRequest } from '@/types'
 
 const LogViewPage = () => {
+  // Hooks d'authentification
+  const { login, isLoading: authLoading, error: authError, clearError } = useAuth()
+  usePublicRoute('/home') // Redirection si dÃ©jÃ  connectÃ©
+
+  const router = useRouter()
+
+  // Ã‰tat du composant
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<string>('')
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setIsLoading(true)
+  // Validation des champs
+  const validateForm = (): boolean => {
+    setFieldErrors('')
+    clearError()
 
     if (!email || !password) {
-      setError('Veuillez remplir tous les champs')
-      setIsLoading(false)
-      return
+      setFieldErrors('Veuillez remplir tous les champs')
+      return false
     }
 
     if (!email.includes('@')) {
-      setError('Veuillez entrer une adresse email valide')
-      setIsLoading(false)
+      setFieldErrors('Veuillez entrer une adresse email valide')
+      return false
+    }
+
+    if (password.length < 6) {
+      setFieldErrors('Le mot de passe doit contenir au moins 6 caractÃ¨res')
+      return false
+    }
+
+    return true
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!validateForm()) {
       return
     }
 
     try {
-      console.log('Tentative de connexion à:', endpoints.auth.login)
-
-      const response = await fetch(endpoints.auth.login, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          email,
-          password,
-        }),
-      })
-
-      console.log('Réponse reçue:', response.status, response.statusText)
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.message || `Erreur serveur: ${response.status}`)
+      const credentials: LoginRequest = {
+        email,
+        password,
       }
 
-      const data = await response.json()
+      await login(credentials)
 
-      // Connexion réussie
-      console.log('Utilisateur connecté:', data)
-
-      // Stocker le token si présent
-      if (data.access_token) {
-        localStorage.setItem('access_token', data.access_token)
-      }
-
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user))
-      }
-
-      setEmail('')
-      setPassword('')
-
-      setTimeout(() => {
-        window.location.href = '/'
-      }, 500)
+      // Redirection gÃ©rÃ©e automatiquement par usePublicRoute ou Context
+      // mais on peut forcer au cas oÃ¹
+      router.push('/home')
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erreur de connexion'
-      console.error('Erreur lors du login:', errorMessage)
-      setError(errorMessage)
-    } finally {
-      setIsLoading(false)
+      // L'erreur est gÃ©rÃ©e par le Context et affichÃ©e via authError
+      console.error('Erreur de connexion:', error)
     }
   }
+
+  const displayError = fieldErrors || authError
+
   return (
     <Stack
       sx={{
@@ -115,13 +110,19 @@ const LogViewPage = () => {
               Connexion
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Connectez-vous à votre compte
+              Connectez-vous Ã  votre compte CESIZen
             </Typography>
           </Box>
 
-          {error && (
-            <Alert severity="error" onClose={() => setError('')}>
-              {error}
+          {displayError && (
+            <Alert
+              severity="error"
+              onClose={() => {
+                setFieldErrors('')
+                clearError()
+              }}
+            >
+              {displayError}
             </Alert>
           )}
 
@@ -133,6 +134,7 @@ const LogViewPage = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               variant="outlined"
+              disabled={authLoading}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -149,6 +151,7 @@ const LogViewPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               variant="outlined"
+              disabled={authLoading}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -157,7 +160,11 @@ const LogViewPage = () => {
                 ),
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton onClick={() => setShowPassword(!showPassword)} edge="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                      disabled={authLoading}
+                    >
                       {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                     </IconButton>
                   </InputAdornment>
@@ -166,44 +173,33 @@ const LogViewPage = () => {
             />
 
             <Button
-              type="submit"
               fullWidth
+              type="submit"
               variant="contained"
               size="large"
-              disabled={isLoading}
+              disabled={authLoading}
               sx={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                textTransform: 'none',
-                fontSize: 16,
-                fontWeight: 600,
-                padding: 1.5,
-                '&:hover': {
-                  background: 'linear-gradient(135deg, #5568d3 0%, #66438e 100%)',
-                },
-                '&:disabled': {
-                  background: '#ccc',
-                },
+                background: 'linear-gradient(45deg, #667eea 30%, #764ba2 90%)',
+                height: 48,
+                fontSize: '1.1rem',
               }}
             >
-              {isLoading ? 'Connexion...' : 'Se connecter'}
-            </Button>
-
-            <Button fullWidth variant="text" size="small" sx={{ textTransform: 'none' }}>
-              Mot de passe oublié ?
+              {authLoading ? 'Connexion en cours...' : 'Se connecter'}
             </Button>
           </Stack>
 
-          <Box sx={{ textAlign: 'center', marginTop: 2 }}>
+          <Box sx={{ textAlign: 'center', mt: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              Pas encore de compte ?{' '}
-              <Link href="/register" style={{ textDecoration: 'none' }}>
-                <Button
-                  variant="text"
-                  size="small"
-                  sx={{ textTransform: 'none', padding: 0, minWidth: 'auto', color: '#667eea' }}
-                >
-                  S&apos;inscrire
-                </Button>
+              Vous n'avez pas de compte ?{' '}
+              <Link
+                href="/register"
+                style={{
+                  color: '#667eea',
+                  textDecoration: 'none',
+                  fontWeight: 'medium',
+                }}
+              >
+                CrÃ©er un compte
               </Link>
             </Typography>
           </Box>

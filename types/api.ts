@@ -1,0 +1,229 @@
+// ======================================================================
+// 🎯 TYPES API - CESIZen Integration Backend NestJS
+// ======================================================================
+
+// ======================================================================
+// 🔐 AUTHENTICATION
+// ======================================================================
+
+export interface User {
+  id: string
+  email: string
+  prenom: string
+  nom: string
+  role?: 'USER' | 'ADMIN'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface LoginRequest {
+  email: string
+  password: string
+}
+
+export interface LoginResponse {
+  success: boolean
+  accessToken: string
+  tokenType: 'Bearer'
+  expiresIn: number // seconds
+  user: User
+}
+
+export interface RegisterRequest {
+  prenom: string
+  nom: string
+  email: string
+  mot_de_passe: string
+}
+
+export interface RegisterResponse {
+  success: boolean
+  accessToken: string
+  tokenType: 'Bearer'
+  expiresIn: number
+  user: User
+}
+
+export interface RefreshTokenResponse {
+  success: boolean
+  accessToken: string
+  tokenType: 'Bearer'
+  expiresIn: number
+}
+
+// ======================================================================
+// 📊 QUESTIONNAIRES
+// ======================================================================
+
+export interface QuestionOption {
+  id: string
+  text: string
+  score: number
+}
+
+export interface Question {
+  id: string
+  text: string
+  order: number
+  options: QuestionOption[]
+}
+
+export interface Questionnaire {
+  id: string
+  title: string
+  description: string
+  category: 'STRESS' | 'ANXIETY' | 'BURNOUT'
+  isActive: boolean
+  questions: Question[]
+  createdAt: string
+  updatedAt: string
+}
+
+export interface QuestionnaireListResponse {
+  questionnaires: Omit<Questionnaire, 'questions'>[]
+  total: number
+}
+
+export interface QuestionnaireDetailResponse {
+  questionnaire: Questionnaire
+}
+
+// ======================================================================
+// 🧠 STRESS DIAGNOSTICS
+// ======================================================================
+
+export interface DiagnosticSubmissionAnswer {
+  questionId: string
+  optionId: string
+  score: number
+}
+
+export interface DiagnosticSubmissionRequest {
+  answers: DiagnosticSubmissionAnswer[]
+}
+
+export interface DiagnosticResult {
+  totalScore: number
+  maxScore: number
+  percentage: number
+  level: 'LOW' | 'MODERATE' | 'HIGH' | 'SEVERE'
+  interpretation: string
+  recommendations: string[]
+}
+
+export interface DiagnosticSubmissionResponse {
+  success: boolean
+  diagnosticId: string
+  result: DiagnosticResult
+  submittedAt: string
+}
+
+export interface DiagnosticHistoryItem {
+  id: string
+  questionnaireId: string
+  questionnaireTitle: string
+  result: DiagnosticResult
+  submittedAt: string
+}
+
+export interface DiagnosticHistoryResponse {
+  diagnostics: DiagnosticHistoryItem[]
+  total: number
+  page: number
+  limit: number
+}
+
+export interface DiagnosticDetailResponse {
+  diagnostic: DiagnosticHistoryItem
+  answers: DiagnosticSubmissionAnswer[]
+  questionnaire: Questionnaire
+}
+
+// ======================================================================
+// 🛠️ API UTILITIES
+// ======================================================================
+
+export interface ApiResponse<T> {
+  success: boolean
+  data: T
+  message?: string
+}
+
+export interface ApiError {
+  success: false
+  error: {
+    code: number
+    message: string
+    details?: string
+  }
+  timestamp: string
+}
+
+export interface PaginationParams {
+  page?: number
+  limit?: number
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+}
+
+// ======================================================================
+// 🔄 HTTP CLIENT TYPES
+// ======================================================================
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+
+export interface RequestConfig {
+  method: HttpMethod
+  url: string
+  data?: unknown
+  params?: Record<string, string | number>
+  headers?: Record<string, string>
+  requireAuth?: boolean
+  requestTimeout?: number
+  authTimeout?: number
+  enableDebug?: boolean
+}
+
+// ======================================================================
+// 📱 FRONTEND STATE TYPES
+// ======================================================================
+
+export interface AuthState {
+  isAuthenticated: boolean
+  user: User | null
+  token: string | null
+  isLoading: boolean
+  error: string | null
+}
+
+export interface DiagnosticState {
+  currentQuestionnaire: Questionnaire | null
+  answers: DiagnosticSubmissionAnswer[]
+  result: DiagnosticResult | null
+  history: DiagnosticHistoryItem[]
+  isLoading: boolean
+  error: string | null
+}
+
+// ======================================================================
+// 🎨 UI COMPONENT TYPES
+// ======================================================================
+
+export interface FormFieldError {
+  field: string
+  message: string
+}
+
+export interface LoadingState {
+  isLoading: boolean
+  error: string | null
+  success: boolean
+}
+
+export type AlertType = 'success' | 'error' | 'warning' | 'info'
+
+export interface AlertMessage {
+  type: AlertType
+  message: string
+  duration?: number
+}

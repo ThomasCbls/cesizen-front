@@ -2,9 +2,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import type { User } from '@/types'
 
 export const useUser = () => {
-  const [user, setUser] = useState(null)
+  const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
