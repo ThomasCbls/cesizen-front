@@ -1,32 +1,31 @@
 'use client'
 
-// ======================================================================
-// 🧠 DIAGNOSTIC VIEW - Composant principal du diagnostic de stress
-// ======================================================================
-
-import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import {
-  Container,
-  Paper,
-  Typography,
-  Button,
-  Box,
   Alert,
-  Stepper,
+  Box,
+  Button,
+  Card,
+  Container,
+  LinearProgress,
   Step,
   StepLabel,
-  LinearProgress,
+  Stepper,
+  Typography,
 } from '@mui/material'
 import { ArrowLeft, TrendingUp } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-import { QuestionnaireService, DiagnosticService } from '@/lib/services'
-import type { Questionnaire, DiagnosticSubmissionAnswer } from '@/types'
-import type { DiagnosticResult as DiagnosticResultType } from '@/types'
+import { DiagnosticService, QuestionnaireService } from '@/lib/services'
+import type {
+  DiagnosticResult as DiagnosticResultType,
+  DiagnosticSubmissionAnswer,
+  Questionnaire,
+} from '@/types'
 
-import QuestionnaireForm from '../components/QuestionnaireForm'
 import DiagnosticResult from '../components/DiagnosticResult'
 import LoadingSpinner from '../components/LoadingSpinner'
+import QuestionnaireForm from '../components/QuestionnaireForm'
 
 // États du diagnostic
 type DiagnosticStep = 'loading' | 'questionnaire' | 'submitting' | 'result' | 'error'
@@ -44,10 +43,6 @@ export default function DiagnosticView() {
   const [diagnosticId, setDiagnosticId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [progress, setProgress] = useState<number>(0)
-
-  // ======================================================================
-  // CHARGEMENT INITIAL
-  // ======================================================================
 
   useEffect(() => {
     loadQuestionnaire()
@@ -72,10 +67,6 @@ export default function DiagnosticView() {
     }
   }
 
-  // ======================================================================
-  // GESTION DES RÉPONSES
-  // ======================================================================
-
   const handleAnswerChange = (questionId: string, optionId: string, score: number) => {
     setAnswers((prev) => {
       const newAnswers = prev.filter((a) => a.questionId !== questionId)
@@ -90,10 +81,6 @@ export default function DiagnosticView() {
       return newAnswers
     })
   }
-
-  // ======================================================================
-  // SOUMISSION DU DIAGNOSTIC
-  // ======================================================================
 
   const handleSubmitDiagnostic = async () => {
     if (!questionnaire || answers.length !== questionnaire.questions.length) {
@@ -126,10 +113,6 @@ export default function DiagnosticView() {
     }
   }
 
-  // ======================================================================
-  // ACTIONS
-  // ======================================================================
-
   const handleRetry = () => {
     setError(null)
     loadQuestionnaire()
@@ -150,10 +133,6 @@ export default function DiagnosticView() {
   const goToHome = () => {
     router.push('/home')
   }
-
-  // ======================================================================
-  // RENDU CONDITIONNEL PAR ÉTAPE
-  // ======================================================================
 
   const renderContent = () => {
     switch (currentStep) {
@@ -202,10 +181,6 @@ export default function DiagnosticView() {
     }
   }
 
-  // ======================================================================
-  // CALCUL DE L'ÉTAPE ACTIVE
-  // ======================================================================
-
   const getActiveStep = (): number => {
     switch (currentStep) {
       case 'loading':
@@ -220,10 +195,6 @@ export default function DiagnosticView() {
     }
   }
 
-  // ======================================================================
-  // RENDU PRINCIPAL
-  // ======================================================================
-
   return (
     <Container maxWidth="lg" className="py-6">
       {/* Header */}
@@ -234,10 +205,10 @@ export default function DiagnosticView() {
           className="mb-4 text-gray-600"
           variant="text"
         >
-          Retour à l'accueil
+          Retour à l&apos;accueil
         </Button>
 
-        <Typography variant="h4" className="font-bold mb-2">
+        <Typography variant="h4" color="textPrimary">
           Diagnostic de Stress
         </Typography>
         <Typography variant="body1" color="textSecondary">
@@ -247,7 +218,10 @@ export default function DiagnosticView() {
 
       {/* Stepper - seulement si pas en erreur */}
       {currentStep !== 'error' && (
-        <Paper elevation={1} className="mb-6 p-4">
+        <Card
+          elevation={0}
+          sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 3, p: 2 }}
+        >
           <Stepper activeStep={getActiveStep()} alternativeLabel>
             {STEPS.map((label) => (
               <Step key={label}>
@@ -255,12 +229,15 @@ export default function DiagnosticView() {
               </Step>
             ))}
           </Stepper>
-        </Paper>
+        </Card>
       )}
 
       {/* Barre de progrès pour le questionnaire */}
       {currentStep === 'questionnaire' && questionnaire && (
-        <Paper elevation={1} className="mb-6 p-4">
+        <Card
+          elevation={0}
+          sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 3, p: 2 }}
+        >
           <Box className="flex items-center space-x-4">
             <Typography variant="body2" className="text-gray-600 min-w-0">
               Progrès: {answers.length} / {questionnaire.questions.length} questions
@@ -270,13 +247,16 @@ export default function DiagnosticView() {
               {progress}%
             </Typography>
           </Box>
-        </Paper>
+        </Card>
       )}
 
       {/* Contenu principal */}
-      <Paper elevation={2} className="p-6">
+      <Card
+        elevation={0}
+        sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 3 }}
+      >
         {renderContent()}
-      </Paper>
+      </Card>
 
       {/* Actions supplémentaires pour la page résultat */}
       {currentStep === 'result' && (
@@ -285,7 +265,7 @@ export default function DiagnosticView() {
             Nouveau Diagnostic
           </Button>
           <Button variant="contained" onClick={goToHistory} startIcon={<TrendingUp />}>
-            Voir l'Historique
+            Voir l&apos;Historique
           </Button>
         </Box>
       )}

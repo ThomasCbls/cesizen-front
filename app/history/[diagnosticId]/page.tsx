@@ -1,21 +1,20 @@
 'use client'
 
-// ======================================================================
 // 🔍 PAGE DETAIL DIAGNOSTIC - CESIZen
-// ======================================================================
 
 import { useRequireAuth } from '@/contexts'
-import DiagnosticDetailView from '../DiagnosticDetailView/DiagnosticDetailView'
+import dynamic from 'next/dynamic'
+import { useParams } from 'next/navigation'
 
-interface DiagnosticDetailPageProps {
-  params: {
-    diagnosticId: string
-  }
-}
+const DiagnosticDetailView = dynamic(() => import('../DiagnosticDetailView/DiagnosticDetailView'), {
+  ssr: false,
+})
 
-export default function DiagnosticDetailPage({ params }: DiagnosticDetailPageProps) {
+export default function DiagnosticDetailPage() {
+  const params = useParams()
+  const diagnosticId = params.diagnosticId as string
   // Protection de la route
   useRequireAuth()
 
-  return <DiagnosticDetailView diagnosticId={params.diagnosticId} />
+  return <DiagnosticDetailView diagnosticId={diagnosticId} />
 }

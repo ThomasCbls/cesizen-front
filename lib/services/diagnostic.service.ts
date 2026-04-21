@@ -1,15 +1,13 @@
-// ======================================================================
 // 🧠 SERVICE DIAGNOSTIC STRESS - CESIZen
-// ======================================================================
 
-import { apiClient } from '../api-client-v2'
 import type {
+  DiagnosticDetailResponse,
+  DiagnosticHistoryResponse,
   DiagnosticSubmissionRequest,
   DiagnosticSubmissionResponse,
-  DiagnosticHistoryResponse,
-  DiagnosticDetailResponse,
   PaginationParams,
 } from '@/types'
+import { apiClient } from '../api-client-v2'
 
 /**
  * Service de gestion des diagnostics de stress
@@ -51,8 +49,6 @@ export class DiagnosticService {
     try {
       const history = await this.getDiagnosticHistory({
         limit: 1,
-        sortBy: 'submittedAt',
-        sortOrder: 'desc',
       })
 
       if (history.diagnostics.length === 0) {

@@ -1,6 +1,4 @@
-// ======================================================================
 // 🔧 CONFIGURATION ENVIRONNEMENT - CESIZen
-// ======================================================================
 
 /**
  * Configuration centralisée des variables d'environnement
@@ -78,7 +76,7 @@ function getEnvBoolean(key: string, defaultValue: boolean): boolean {
  */
 export const config: EnvConfig = {
   // API Configuration
-  apiUrl: getEnvVar('NEXT_PUBLIC_API_URL', 'http://localhost:3001'),
+  apiUrl: getEnvVar('NEXT_PUBLIC_API_URL', 'http://localhost:3000'),
 
   // Authentication
   authTokenKey: getEnvVar('NEXT_PUBLIC_AUTH_TOKEN_KEY', 'cesizen_access_token'),
@@ -137,7 +135,7 @@ export function validateConfig(): void {
   }
 }
 
-// Validation automatique en mode client
-if (typeof window !== 'undefined') {
+// Validation automatique côté serveur uniquement
+if (typeof window === 'undefined') {
   validateConfig()
 }

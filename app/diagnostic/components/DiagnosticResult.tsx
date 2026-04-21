@@ -1,25 +1,22 @@
 'use client'
 
-// ======================================================================
 // 📈 RESULTAT DIAGNOSTIC - Composant d'affichage des résultats
-// ======================================================================
 
-import React from 'react'
 import {
-  Typography,
+  Alert,
+  Box,
+  Button,
   Card,
   CardContent,
-  Button,
-  Box,
-  Alert,
   Chip,
   LinearProgress,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
+  Typography,
 } from '@mui/material'
-import { TrendingUp, AlertTriangle, CheckCircle, Lightbulb, Calendar, Target } from 'lucide-react'
+import { AlertTriangle, Calendar, CheckCircle, Lightbulb, Target, TrendingUp } from 'lucide-react'
 
 import type { DiagnosticResult } from '@/types'
 
@@ -82,18 +79,18 @@ export default function DiagnosticResult({
         <div className="mb-4">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
         </div>
-        <Typography variant="h4" className="font-bold mb-2">
+        <Typography variant="h4" color="textPrimary">
           Diagnostic Terminé
         </Typography>
         <Typography variant="body1" color="textSecondary">
-          Voici l'analyse de votre niveau de stress
+          Voici l&apos;analyse de votre niveau de stress
         </Typography>
       </Box>
 
       {/* Score global */}
       <Card variant="outlined" className="mb-6">
         <CardContent className="text-center p-8">
-          <Typography variant="h2" className="font-bold mb-2">
+          <Typography variant="h2" color="textPrimary">
             {result.totalScore}/{result.maxScore}
           </Typography>
           <Typography variant="h6" color="textSecondary" className="mb-4">
@@ -196,7 +193,7 @@ export default function DiagnosticResult({
           startIcon={<TrendingUp />}
           className="bg-blue-600 hover:bg-blue-700"
         >
-          Voir l'Historique Complet
+          Voir l&apos;Historique Complet
         </Button>
       </Box>
 
@@ -204,9 +201,10 @@ export default function DiagnosticResult({
       {result.level === 'SEVERE' && (
         <Alert severity="warning" className="mt-6">
           <Typography variant="body2">
-            <strong>Note importante:</strong> Ce diagnostic est un outil d'évaluation et ne remplace
-            pas une consultation médicale. Si vous ressentez un stress important qui affecte votre
-            quotidien, nous vous encourageons à consulter un professionnel de la santé.
+            <strong>Note importante:</strong> Ce diagnostic est un outil d&apos;évaluation et ne
+            remplace pas une consultation médicale. Si vous ressentez un stress important qui
+            affecte votre quotidien, nous vous encourageons à consulter un professionnel de la
+            santé.
           </Typography>
         </Alert>
       )}

@@ -1,24 +1,19 @@
 'use client'
 
-// ======================================================================
-// 📋 FORMULAIRE QUESTIONNAIRE - Composant pour répondre aux questions
-// ======================================================================
-
-import React from 'react'
 import {
-  Typography,
+  Box,
+  Button,
   Card,
   CardContent,
-  RadioGroup,
+  Chip,
   FormControlLabel,
   Radio,
-  Button,
-  Box,
-  Chip,
+  RadioGroup,
+  Typography,
 } from '@mui/material'
 import { CheckCircle, Circle } from 'lucide-react'
 
-import type { Questionnaire, DiagnosticSubmissionAnswer } from '@/types'
+import type { DiagnosticSubmissionAnswer, Questionnaire } from '@/types'
 
 interface QuestionnaireFormProps {
   questionnaire: Questionnaire
@@ -32,7 +27,6 @@ interface QuestionnaireFormProps {
 export default function QuestionnaireForm({
   questionnaire,
   answers,
-  progress,
   onAnswerChange,
   onSubmit,
   disabled = false,
