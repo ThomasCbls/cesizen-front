@@ -23,6 +23,8 @@ const PROTECTED_ROUTES = [
   '/profile',
 ]
 
+const ADMIN_ROUTES = ['/admin', '/admin/*']
+
 // Headers et clés de configuration
 const AUTH_TOKEN_KEY = 'cesizen_access_token'
 // const AUTH_USER_KEY = 'cesizen_user' // Variable not used yet
@@ -46,6 +48,19 @@ function isPublicRoute(pathname: string): boolean {
  */
 function isProtectedRoute(pathname: string): boolean {
   return PROTECTED_ROUTES.some((route) => {
+    if (route.endsWith('*')) {
+      const basePath = route.slice(0, -2)
+      return pathname.startsWith(basePath)
+    }
+    return pathname === route || pathname.startsWith(`${route}/`)
+  })
+}
+
+/**
+ * Vérifie si une route est réservée aux administrateurs
+ */
+function isAdminRoute(pathname: string): boolean {
+  return ADMIN_ROUTES.some((route) => {
     if (route.endsWith('*')) {
       const basePath = route.slice(0, -2)
       return pathname.startsWith(basePath)
@@ -88,6 +103,19 @@ function isAuthenticated(request: NextRequest): boolean {
 }
 
 /**
+ * Vérifie si l'utilisateur est administrateur
+ * Note: Cette fonction nécessite d'avoir les informations utilisateur stockées
+ * Pour une implémentation complète, il faudrait décoder le JWT ou stocker le rôle
+ */
+function isAdmin(request: NextRequest): boolean {
+  // Pour l'instant, on peut vérifier via localStorage côté client
+  // ou décoder le JWT si le rôle y est stocké
+  // Ici on fait une vérification basique via les cookies
+  const userRole = request.cookies.get('cesizen_user_role')?.value
+  return userRole === 'ADMIN'
+}
+
+/**
  * Applique le contrôle d'accès
  */
 export function middleware(request: NextRequest) {
@@ -119,6 +147,20 @@ export function middleware(request: NextRequest) {
     // Conserver l'URL de destination pour redirection après login
     loginUrl.searchParams.set('redirect', pathname)
     return NextResponse.redirect(loginUrl)
+  }
+
+  // Si route admin et utilisateur non authentifié ou non admin
+  if (isAdminRoute(pathname)) {
+    if (!authenticated) {
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('redirect', pathname)
+      return NextResponse.redirect(loginUrl)
+    }
+
+    if (!isAdmin(request)) {
+      // Rediriger vers la page d'accueil si l'utilisateur n'est pas admin
+      return NextResponse.redirect(new URL('/home', request.url))
+    }
   }
 
   // Middleware pour les pages par défaut

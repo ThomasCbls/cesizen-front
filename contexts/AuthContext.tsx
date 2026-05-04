@@ -139,6 +139,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     localStorage.setItem(config.authTokenKey, token)
     localStorage.setItem(config.authUserKey, JSON.stringify(user))
+
+    // Stocker le rôle dans un cookie pour le middleware
+    document.cookie = `cesizen_user_role=${user.role}; path=/; SameSite=Lax`
   }, [])
 
   const clearStoredAuth = useCallback((): void => {
@@ -146,6 +149,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     localStorage.removeItem(config.authTokenKey)
     localStorage.removeItem(config.authUserKey)
+
+    // Effacer le cookie du rôle
+    document.cookie = 'cesizen_user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
   }, [])
 
   // ======================================================================
@@ -177,7 +183,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const errorMessage =
           error && typeof error === 'object' && 'error' in error
             ? (error as { error?: { message?: string }; message?: string }).error?.message ||
-              (error as { error?: { message?: string }; message?: string }).message
+              (error as { error?: { message?: string }; message?: string }).message ||
+              'Erreur de connexion'
             : 'Erreur de connexion'
         dispatch({ type: 'AUTH_ERROR', payload: errorMessage })
         throw error
@@ -211,7 +218,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const errorMessage =
           error && typeof error === 'object' && 'error' in error
             ? (error as { error?: { message?: string }; message?: string }).error?.message ||
-              (error as { error?: { message?: string }; message?: string }).message
+              (error as { error?: { message?: string }; message?: string }).message ||
+              "Erreur d'inscription"
             : "Erreur d'inscription"
         dispatch({ type: 'AUTH_ERROR', payload: errorMessage })
         throw error
