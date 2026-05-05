@@ -1,11 +1,6 @@
 'use client'
 
-// ======================================================================
-// ⏳ LOADING SPINNER - Composant de chargement réutilisable
-// ======================================================================
-
-import React from 'react'
-import { Box, Typography, CircularProgress } from '@mui/material'
+import { Box, CircularProgress, Typography } from '@mui/material'
 import { Brain } from 'lucide-react'
 
 interface LoadingSpinnerProps {

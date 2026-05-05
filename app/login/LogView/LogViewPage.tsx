@@ -1,8 +1,6 @@
 ﻿'use client'
 
-// ======================================================================
 // ðŸ”‘ LOGIN VIEW PAGE - Mise Ã  jour avec nouveau systÃ¨me d'auth
-// ======================================================================
 
 import {
   Alert,
@@ -17,8 +15,8 @@ import {
 } from '@mui/material'
 import { Eye, EyeOff, Lock, User } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 import { useAuth, usePublicRoute } from '@/contexts'
 import type { LoginRequest } from '@/types'
@@ -26,11 +24,10 @@ import type { LoginRequest } from '@/types'
 const LogViewPage = () => {
   // Hooks d'authentification
   const { login, isLoading: authLoading, error: authError, clearError } = useAuth()
-  usePublicRoute('/home') // Redirection si dÃ©jÃ  connectÃ©
+  usePublicRoute('/home')
 
   const router = useRouter()
 
-  // Ã‰tat du composant
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -52,7 +49,7 @@ const LogViewPage = () => {
     }
 
     if (password.length < 6) {
-      setFieldErrors('Le mot de passe doit contenir au moins 6 caractÃ¨res')
+      setFieldErrors('Le mot de passe doit contenir au moins 6 caractères')
       return false
     }
 
@@ -74,11 +71,8 @@ const LogViewPage = () => {
 
       await login(credentials)
 
-      // Redirection gÃ©rÃ©e automatiquement par usePublicRoute ou Context
-      // mais on peut forcer au cas oÃ¹
       router.push('/home')
     } catch (error) {
-      // L'erreur est gÃ©rÃ©e par le Context et affichÃ©e via authError
       console.error('Erreur de connexion:', error)
     }
   }
@@ -110,7 +104,7 @@ const LogViewPage = () => {
               Connexion
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Connectez-vous Ã  votre compte CESIZen
+              Connectez-vous à votre compte CESIZen
             </Typography>
           </Box>
 
@@ -190,7 +184,7 @@ const LogViewPage = () => {
 
           <Box sx={{ textAlign: 'center', mt: 2 }}>
             <Typography variant="body2" color="text.secondary">
-              Vous n'avez pas de compte ?{' '}
+              Vous n&apos;avez pas de compte ?{' '}
               <Link
                 href="/register"
                 style={{
@@ -199,7 +193,7 @@ const LogViewPage = () => {
                   fontWeight: 'medium',
                 }}
               >
-                CrÃ©er un compte
+                Créer un compte
               </Link>
             </Typography>
           </Box>

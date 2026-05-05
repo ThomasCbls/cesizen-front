@@ -1,21 +1,16 @@
-// ======================================================================
-// 🎯 TYPES INDEX - Export centralisé des types CESIZen
-// ======================================================================
-
-// API Types
 export * from './api'
 
 // Ré-export des types utilisés fréquemment
 export type {
-  User,
+  ApiError,
+  ApiResponse,
+  AuthState,
+  DiagnosticHistoryItem,
+  DiagnosticResult,
+  DiagnosticSubmissionRequest,
+  LoadingState,
   LoginRequest,
   LoginResponse,
   Questionnaire,
-  DiagnosticResult,
-  DiagnosticSubmissionRequest,
-  DiagnosticHistoryItem,
-  AuthState,
-  LoadingState,
-  ApiResponse,
-  ApiError,
+  User,
 } from './api'

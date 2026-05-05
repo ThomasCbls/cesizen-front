@@ -1,16 +1,14 @@
-// ======================================================================
 // 🔐 SERVICE AUTHENTIFICATION - CESIZen
-// ======================================================================
 
-import { apiClient } from '../api-client-v2'
 import type {
   LoginRequest,
   LoginResponse,
+  RefreshTokenResponse,
   RegisterRequest,
   RegisterResponse,
-  RefreshTokenResponse,
   User,
 } from '@/types'
+import { apiClient } from '../api-client-v2'
 
 /**
  * Service d'authentification avec le backend NestJS

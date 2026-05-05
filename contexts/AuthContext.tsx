@@ -1,17 +1,9 @@
 'use client'
 
-// ======================================================================
-// 🔐 AUTH CONTEXT - CESIZen
-// ======================================================================
-
-import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react'
-import { AuthService } from '@/lib/services'
 import { config } from '@/lib/config'
-import type { User, AuthState, LoginRequest, RegisterRequest } from '@/types'
-
-// ======================================================================
-// TYPES & INTERFACES
-// ======================================================================
+import { AuthService } from '@/lib/services'
+import type { AuthState, LoginRequest, RegisterRequest, User } from '@/types'
+import React, { createContext, useCallback, useContext, useEffect, useReducer } from 'react'
 
 interface AuthContextType extends AuthState {
   // Actions
@@ -30,9 +22,7 @@ type AuthAction =
   | { type: 'CLEAR_ERROR' }
   | { type: 'SET_LOADING'; payload: boolean }
 
-// ======================================================================
 // REDUCER
-// ======================================================================
 
 const initialState: AuthState = {
   isAuthenticated: false,
@@ -94,15 +84,11 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
   }
 }
 
-// ======================================================================
 // CONTEXT
-// ======================================================================
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// ======================================================================
 // PROVIDER COMPONENT
-// ======================================================================
 
 interface AuthProviderProps {
   children: React.ReactNode
@@ -111,9 +97,7 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [state, dispatch] = useReducer(authReducer, initialState)
 
-  // ======================================================================
   // STORAGE UTILITIES
-  // ======================================================================
 
   const getStoredToken = useCallback((): string | null => {
     if (typeof window === 'undefined') return null
@@ -140,8 +124,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     localStorage.setItem(config.authTokenKey, token)
     localStorage.setItem(config.authUserKey, JSON.stringify(user))
 
-    // Stocker le rôle dans un cookie pour le middleware
-    document.cookie = `cesizen_user_role=${user.role}; path=/; SameSite=Lax`
+    // Stocker aussi en cookie pour que le middleware server-side puisse le lire
+    document.cookie = `${config.authTokenKey}=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
   }, [])
 
   const clearStoredAuth = useCallback((): void => {
@@ -150,13 +134,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     localStorage.removeItem(config.authTokenKey)
     localStorage.removeItem(config.authUserKey)
 
-    // Effacer le cookie du rôle
-    document.cookie = 'cesizen_user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    // Supprimer aussi le cookie
+    document.cookie = `${config.authTokenKey}=; path=/; max-age=0`
   }, [])
 
-  // ======================================================================
   // ACTIONS
-  // ======================================================================
 
   const login = useCallback(
     async (credentials: LoginRequest): Promise<void> => {
@@ -165,27 +147,30 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         const response = await AuthService.login(credentials)
 
-        if (!response.success) {
+        if (!response.access_token || !response.user) {
           throw new Error('Échec de la connexion')
         }
 
         // Stocker les données d'auth
-        storeAuth(response.user, response.accessToken)
+        storeAuth(response.user, response.access_token)
 
         dispatch({
           type: 'AUTH_SUCCESS',
           payload: {
             user: response.user,
-            token: response.accessToken,
+            token: response.access_token,
           },
         })
       } catch (error: unknown) {
+        console.error('Login error details:', error)
         const errorMessage =
           error && typeof error === 'object' && 'error' in error
             ? (error as { error?: { message?: string }; message?: string }).error?.message ||
               (error as { error?: { message?: string }; message?: string }).message ||
               'Erreur de connexion'
-            : 'Erreur de connexion'
+            : error instanceof Error
+              ? error.message
+              : 'Erreur de connexion'
         dispatch({ type: 'AUTH_ERROR', payload: errorMessage })
         throw error
       }
@@ -200,18 +185,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         const response = await AuthService.register(userData)
 
-        if (!response.success) {
+        if (!response.access_token || !response.user) {
           throw new Error("Échec de l'inscription")
         }
 
         // Stocker les données d'auth
-        storeAuth(response.user, response.accessToken)
+        storeAuth(response.user, response.access_token)
 
         dispatch({
           type: 'AUTH_SUCCESS',
           payload: {
             user: response.user,
-            token: response.accessToken,
+            token: response.access_token,
           },
         })
       } catch (error: unknown) {
@@ -261,13 +246,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Essayer de refresh le token
         try {
           const refreshResponse = await AuthService.refreshToken()
-          if (refreshResponse.success) {
-            storeAuth(tokenCheck.user || storedUser, refreshResponse.accessToken)
+          if (refreshResponse.access_token) {
+            storeAuth(tokenCheck.user || storedUser, refreshResponse.access_token)
             dispatch({
               type: 'AUTH_SUCCESS',
               payload: {
                 user: tokenCheck.user || storedUser,
-                token: refreshResponse.accessToken,
+                token: refreshResponse.access_token,
               },
             })
             return
@@ -282,11 +267,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
         return
       }
 
-      // Token valide
+      // Token valide — s'assurer que le cookie est aussi à jour pour le middleware
+      const validUser = tokenCheck.user || storedUser
+      storeAuth(validUser, storedToken)
+
       dispatch({
         type: 'AUTH_SUCCESS',
         payload: {
-          user: tokenCheck.user || storedUser,
+          user: validUser,
           token: storedToken,
         },
       })
@@ -303,9 +291,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     dispatch({ type: 'CLEAR_ERROR' })
   }, [])
 
-  // ======================================================================
   // INITIALIZATION
-  // ======================================================================
 
   useEffect(() => {
     refreshAuth()
@@ -328,9 +314,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => clearInterval(refreshInterval)
   }, [state.isAuthenticated, refreshAuth])
 
-  // ======================================================================
   // CONTEXT VALUE
-  // ======================================================================
 
   const contextValue: AuthContextType = {
     // State
@@ -346,9 +330,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
 }
 
-// ======================================================================
 // HOOK
-// ======================================================================
 
 export function useAuth(): AuthContextType {
   const context = useContext(AuthContext)
@@ -358,9 +340,7 @@ export function useAuth(): AuthContextType {
   return context
 }
 
-// ======================================================================
 // UTILITY HOOKS
-// ======================================================================
 
 /**
  * Hook qui garantit que l'utilisateur est authentifié

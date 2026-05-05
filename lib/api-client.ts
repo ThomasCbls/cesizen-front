@@ -1,15 +1,7 @@
-// ======================================================================
 // 🌐 CLIENT API ROBUSTE - CESIZen
-// ======================================================================
 
+import type { ApiError, RefreshTokenResponse, RequestConfig } from '@/types'
 import { config } from './config'
-import type {
-  ApiResponse,
-  ApiError,
-  HttpMethod,
-  RequestConfig,
-  RefreshTokenResponse,
-} from '@/types'
 
 /**
  * Interface pour les intercepteurs de requête

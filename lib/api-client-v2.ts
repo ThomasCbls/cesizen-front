@@ -1,9 +1,7 @@
-// ======================================================================
 // 🌐 CLIENT API ROBUSTE - CESIZen
-// ======================================================================
 
-import { config } from './config'
 import type { ApiError, HttpMethod, RefreshTokenResponse } from '@/types'
+import { config } from './config'
 
 /**
  * Configuration de requête simplifiée
@@ -89,8 +87,8 @@ class ApiClient {
       }
 
       const data: RefreshTokenResponse = await response.json()
-      this.setStoredToken(data.accessToken)
-      return data.accessToken
+      this.setStoredToken(data.access_token)
+      return data.access_token
     } catch (error) {
       console.error('Token refresh failed:', error)
       this.handleAuthFailure()

@@ -1,11 +1,3 @@
-// ======================================================================
-// 🎯 TYPES API - CESIZen Integration Backend NestJS
-// ======================================================================
-
-// ======================================================================
-// 🔐 AUTHENTICATION
-// ======================================================================
-
 export interface User {
   id: string
   email: string
@@ -22,10 +14,7 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  success: boolean
-  accessToken: string
-  tokenType: 'Bearer'
-  expiresIn: number // seconds
+  access_token: string
   user: User
 }
 
@@ -37,23 +26,13 @@ export interface RegisterRequest {
 }
 
 export interface RegisterResponse {
-  success: boolean
-  accessToken: string
-  tokenType: 'Bearer'
-  expiresIn: number
+  access_token: string
   user: User
 }
 
 export interface RefreshTokenResponse {
-  success: boolean
-  accessToken: string
-  tokenType: 'Bearer'
-  expiresIn: number
+  access_token: string
 }
-
-// ======================================================================
-// 📊 QUESTIONNAIRES
-// ======================================================================
 
 export interface QuestionOption {
   id: string
@@ -87,10 +66,6 @@ export interface QuestionnaireListResponse {
 export interface QuestionnaireDetailResponse {
   questionnaire: Questionnaire
 }
-
-// ======================================================================
-// 🧠 STRESS DIAGNOSTICS
-// ======================================================================
 
 export interface DiagnosticSubmissionAnswer {
   questionId: string
@@ -133,15 +108,10 @@ export interface DiagnosticHistoryResponse {
   limit: number
 }
 
-export interface DiagnosticDetailResponse {
-  diagnostic: DiagnosticHistoryItem
+export interface DiagnosticDetailResponse extends DiagnosticHistoryItem {
   answers: DiagnosticSubmissionAnswer[]
   questionnaire: Questionnaire
 }
-
-// ======================================================================
-// 🛠️ API UTILITIES
-// ======================================================================
 
 export interface ApiResponse<T> {
   success: boolean
@@ -166,10 +136,6 @@ export interface PaginationParams {
   sortOrder?: 'asc' | 'desc'
 }
 
-// ======================================================================
-// 🔄 HTTP CLIENT TYPES
-// ======================================================================
-
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
 
 export interface RequestConfig {
@@ -183,10 +149,6 @@ export interface RequestConfig {
   authTimeout?: number
   enableDebug?: boolean
 }
-
-// ======================================================================
-// 📱 FRONTEND STATE TYPES
-// ======================================================================
 
 export interface AuthState {
   isAuthenticated: boolean
@@ -204,10 +166,6 @@ export interface DiagnosticState {
   isLoading: boolean
   error: string | null
 }
-
-// ======================================================================
-// 🎨 UI COMPONENT TYPES
-// ======================================================================
 
 export interface FormFieldError {
   field: string

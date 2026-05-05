@@ -1,9 +1,7 @@
-// ======================================================================
 // 🛡️ MIDDLEWARE PROTECTION ROUTES - CESIZen
-// ======================================================================
 
-import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 
 // Configuration des routes
 const PUBLIC_ROUTES = [

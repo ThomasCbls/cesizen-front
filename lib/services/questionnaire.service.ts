@@ -1,14 +1,12 @@
-// ======================================================================
 // 📋 SERVICE QUESTIONNAIRES - CESIZen
-// ======================================================================
 
-import { apiClient } from '../api-client-v2'
 import type {
-  Questionnaire,
-  QuestionnaireListResponse,
-  QuestionnaireDetailResponse,
   PaginationParams,
+  Questionnaire,
+  QuestionnaireDetailResponse,
+  QuestionnaireListResponse,
 } from '@/types'
+import { apiClient } from '../api-client-v2'
 
 /**
  * Service de gestion des questionnaires

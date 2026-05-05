@@ -270,7 +270,7 @@ const RegisterViewPage = () => {
           <Box sx={{ textAlign: 'center', marginTop: 2 }}>
             <Typography variant="body2" color="text.secondary">
               Vous avez déjà un compte ?{' '}
-              <Link href="/" style={{ textDecoration: 'none' }}>
+              <Link href="/login" style={{ textDecoration: 'none' }}>
                 <Button
                   variant="text"
                   size="small"

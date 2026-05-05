@@ -1,9 +1,5 @@
 'use client'
 
-// ======================================================================
-// 🏠 HOME PAGE - Mise à jour avec nouveau système d'auth
-// ======================================================================
-
 import { useRequireAuth } from '@/contexts'
 import {
   AppBar,
@@ -17,7 +13,6 @@ import {
   Chip,
   Container,
   Divider,
-  Grid,
   IconButton,
   ListItemIcon,
   Menu,
@@ -28,17 +23,7 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
-import {
-  BellRing,
-  BrainIcon,
-  LogOut,
-  Newspaper,
-  Settings,
-  TrendingUp,
-  BarChart3,
-  Target,
-} from 'lucide-react'
-import Link from 'next/link'
+import { BrainIcon, LogOut, Newspaper, Settings, Target, TrendingUp } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import React from 'react'
 
@@ -158,10 +143,6 @@ const HomePage = () => {
               Historique
             </Button>
 
-            <IconButton size="small">
-              <BellRing size={20} color={theme.palette.text.secondary} />
-            </IconButton>
-
             <Tooltip title="Mon compte">
               <IconButton
                 onClick={handleClick}
@@ -214,13 +195,6 @@ const HomePage = () => {
                 <Settings size={16} />
               </ListItemIcon>
               Paramètres
-            </MenuItem>
-
-            <MenuItem onClick={goToHistory}>
-              <ListItemIcon>
-                <BarChart3 size={16} />
-              </ListItemIcon>
-              Historique
             </MenuItem>
 
             <Divider />
