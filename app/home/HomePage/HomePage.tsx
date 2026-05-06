@@ -228,7 +228,7 @@ const HomePage = () => {
         >
           <Box>
             <Typography variant="h4" fontWeight="bold" gutterBottom>
-              {user?.prenom ? `Bonjour ${user.prenom} 👋` : 'Bonjour 👋'}
+              {user?.prenom ? `Bonjour ${user.prenom}` : 'Bonjour'}
             </Typography>
             <Typography variant="body1" sx={{ opacity: 0.9, maxWidth: 600 }}>
               Prenez soin de votre santé mentale. C&apos;est le moment idéal pour faire le point sur
