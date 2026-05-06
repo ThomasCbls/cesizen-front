@@ -1,56 +1,29 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { adminService, type AdminQuestionnaire } from '@/lib/services'
 import {
-  Container,
-  Typography,
-  Stack,
-  Box,
-  Snackbar,
   Alert,
+  Box,
   Button,
+  Card,
+  CardContent,
+  Chip,
+  Container,
   Dialog,
   DialogContent,
   DialogTitle,
-  IconButton,
-  Card,
-  CardContent,
   Divider,
-  Chip,
+  IconButton,
   Paper,
+  Snackbar,
+  Stack,
+  Typography,
 } from '@mui/material'
-import { X, Plus, ClipboardList } from 'lucide-react'
-import { QuestionnaireTable, QuestionnaireModal, ConfirmDeleteModal } from '../components'
+import { ClipboardList, Plus, X } from 'lucide-react'
+import { useCallback, useEffect, useState } from 'react'
+import { ConfirmDeleteModal, QuestionnaireModal, QuestionnaireTable } from '../components'
 
-// Types pour les questionnaires
-interface QuestionOption {
-  id: string
-  text: string
-  score: number
-}
-
-interface Question {
-  id: string
-  text: string
-  order: number
-  options: QuestionOption[]
-}
-
-interface Questionnaire {
-  id?: string
-  title: string
-  description: string
-  category: 'STRESS' | 'ANXIETY' | 'BURNOUT'
-  isActive: boolean
-  questions: Question[]
-  createdAt?: Date
-  updatedAt?: Date
-  stats?: {
-    totalResponses: number
-    avgScore: number
-    lastResponseAt?: Date
-  }
-}
+type Questionnaire = AdminQuestionnaire
 
 interface SnackbarState {
   open: boolean
@@ -102,108 +75,8 @@ export default function QuestionnaireManagement() {
   const loadQuestionnaires = useCallback(async () => {
     try {
       setLoading(true)
-
-      // Simulation d'appel API - À remplacer par vraie API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Données mockées
-      const mockQuestionnaires: Questionnaire[] = [
-        {
-          id: '1',
-          title: 'Échelle de stress perçu (PSS-10)',
-          description:
-            'Questionnaire standardisé pour mesurer le niveau de stress perçu au cours du dernier mois.',
-          category: 'STRESS',
-          isActive: true,
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date('2024-02-10'),
-          stats: {
-            totalResponses: 247,
-            avgScore: 16.8,
-            lastResponseAt: new Date(),
-          },
-          questions: [
-            {
-              id: 'q1',
-              text: 'Au cours du dernier mois, combien de fois avez-vous été contrarié(e) par quelque chose qui est arrivé de manière inattendue ?',
-              order: 0,
-              options: [
-                { id: 'o1', text: 'Jamais', score: 0 },
-                { id: 'o2', text: 'Presque jamais', score: 1 },
-                { id: 'o3', text: 'Parfois', score: 2 },
-                { id: 'o4', text: 'Assez souvent', score: 3 },
-                { id: 'o5', text: 'Très souvent', score: 4 },
-              ],
-            },
-            {
-              id: 'q2',
-              text: 'Au cours du dernier mois, combien de fois avez-vous senti que vous étiez incapable de contrôler les choses importantes de votre vie ?',
-              order: 1,
-              options: [
-                { id: 'o6', text: 'Jamais', score: 0 },
-                { id: 'o7', text: 'Presque jamais', score: 1 },
-                { id: 'o8', text: 'Parfois', score: 2 },
-                { id: 'o9', text: 'Assez souvent', score: 3 },
-                { id: 'o10', text: 'Très souvent', score: 4 },
-              ],
-            },
-          ],
-        },
-        {
-          id: '2',
-          title: 'Inventaire de Burnout de Maslach (MBI)',
-          description: "Questionnaire de référence pour évaluer l'épuisement professionnel.",
-          category: 'BURNOUT',
-          isActive: true,
-          createdAt: new Date('2024-01-20'),
-          updatedAt: new Date('2024-01-25'),
-          stats: {
-            totalResponses: 89,
-            avgScore: 22.4,
-            lastResponseAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-          },
-          questions: [
-            {
-              id: 'q3',
-              text: 'Je me sens émotionnellement vidé(e) par mon travail',
-              order: 0,
-              options: [
-                { id: 'o11', text: 'Jamais', score: 0 },
-                { id: 'o12', text: 'Quelques fois par an', score: 1 },
-                { id: 'o13', text: 'Une fois par mois', score: 2 },
-                { id: 'o14', text: 'Quelques fois par mois', score: 3 },
-                { id: 'o15', text: 'Une fois par semaine', score: 4 },
-                { id: 'o16', text: 'Quelques fois par semaine', score: 5 },
-                { id: 'o17', text: 'Chaque jour', score: 6 },
-              ],
-            },
-          ],
-        },
-        {
-          id: '3',
-          title: "Questionnaire d'anxiété GAD-7",
-          description: 'Outil de dépistage des troubles anxieux généralisés.',
-          category: 'ANXIETY',
-          isActive: false,
-          createdAt: new Date('2024-02-01'),
-          updatedAt: new Date('2024-02-01'),
-          questions: [
-            {
-              id: 'q4',
-              text: 'Au cours des 2 dernières semaines, à quelle fréquence avez-vous été dérangé(e) par les problèmes suivants : Se sentir nerveux(se), anxieux(se) ou survolté(e)',
-              order: 0,
-              options: [
-                { id: 'o18', text: 'Pas du tout', score: 0 },
-                { id: 'o19', text: 'Plusieurs jours', score: 1 },
-                { id: 'o20', text: 'Plus de la moitié des jours', score: 2 },
-                { id: 'o21', text: 'Presque tous les jours', score: 3 },
-              ],
-            },
-          ],
-        },
-      ]
-
-      setQuestionnaires(mockQuestionnaires)
+      const data = await adminService.getQuestionnaires()
+      setQuestionnaires(data)
     } catch (error) {
       console.error('Erreur lors du chargement des questionnaires:', error)
       showSnackbar('Erreur lors du chargement des questionnaires', 'error')
@@ -224,15 +97,10 @@ export default function QuestionnaireManagement() {
   // Actions questionnaire
   const handleToggleActive = async (questionnaireId: string, isActive: boolean) => {
     try {
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
+      const updated = await adminService.toggleQuestionnaireActive(questionnaireId, isActive)
       setQuestionnaires((prev) =>
-        prev.map((questionnaire) =>
-          questionnaire.id === questionnaireId ? { ...questionnaire, isActive } : questionnaire,
-        ),
+        prev.map((q) => (q.id === questionnaireId ? { ...q, ...updated } : q)),
       )
-
       showSnackbar(`Questionnaire ${isActive ? 'activé' : 'désactivé'} avec succès`, 'success')
     } catch {
       showSnackbar('Erreur lors de la mise à jour du statut', 'error')
@@ -264,20 +132,14 @@ export default function QuestionnaireManagement() {
 
   const handleDuplicateQuestionnaire = async (questionnaire: Questionnaire) => {
     try {
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      const duplicatedQuestionnaire = {
-        ...questionnaire,
-        id: Date.now().toString(),
+      const created = await adminService.createQuestionnaire({
         title: `${questionnaire.title} (Copie)`,
+        description: questionnaire.description,
+        category: questionnaire.category,
         isActive: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        stats: undefined,
-      }
-
-      setQuestionnaires((prev) => [...prev, duplicatedQuestionnaire])
+        questions: questionnaire.questions,
+      })
+      setQuestionnaires((prev) => [...prev, created])
       showSnackbar('Questionnaire dupliqué avec succès', 'success')
     } catch {
       showSnackbar('Erreur lors de la duplication', 'error')
@@ -288,32 +150,18 @@ export default function QuestionnaireManagement() {
     try {
       setQuestionnaireModal((prev) => ({ ...prev, loading: true }))
 
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
       if (questionnaireData.id) {
-        // Modification
+        const updated = await adminService.updateQuestionnaire(
+          questionnaireData.id,
+          questionnaireData,
+        )
         setQuestionnaires((prev) =>
-          prev.map((questionnaire) =>
-            questionnaire.id === questionnaireData.id
-              ? {
-                  ...questionnaireData,
-                  updatedAt: new Date(),
-                  stats: prev.find((q) => q.id === questionnaireData.id)?.stats,
-                }
-              : questionnaire,
-          ),
+          prev.map((q) => (q.id === questionnaireData.id ? { ...q, ...updated } : q)),
         )
         showSnackbar('Questionnaire modifié avec succès', 'success')
       } else {
-        // Création
-        const newQuestionnaire = {
-          ...questionnaireData,
-          id: Date.now().toString(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        }
-        setQuestionnaires((prev) => [...prev, newQuestionnaire])
+        const created = await adminService.createQuestionnaire(questionnaireData)
+        setQuestionnaires((prev) => [...prev, created])
         showSnackbar('Questionnaire créé avec succès', 'success')
       }
 
@@ -337,13 +185,9 @@ export default function QuestionnaireManagement() {
     try {
       setDeleteModal((prev) => ({ ...prev, loading: true }))
 
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      if (deleteModal.questionnaire) {
-        setQuestionnaires((prev) =>
-          prev.filter((questionnaire) => questionnaire.id !== deleteModal.questionnaire?.id),
-        )
+      if (deleteModal.questionnaire?.id) {
+        await adminService.deleteQuestionnaire(deleteModal.questionnaire.id)
+        setQuestionnaires((prev) => prev.filter((q) => q.id !== deleteModal.questionnaire?.id))
         showSnackbar('Questionnaire supprimé avec succès', 'success')
       }
 
@@ -449,7 +293,7 @@ export default function QuestionnaireManagement() {
 
             <Box sx={{ textAlign: 'center' }}>
               <Typography variant="h3" sx={{ fontWeight: 700, color: 'info.main' }}>
-                {questionnaires.reduce((sum, q) => sum + q.questions.length, 0)}
+                {questionnaires.reduce((sum, q) => sum + (q.questions?.length ?? 0), 0)}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Questions totales
@@ -519,7 +363,7 @@ export default function QuestionnaireManagement() {
                 <Divider />
 
                 <Stack spacing={3}>
-                  {previewModal.questionnaire.questions.map((question, index) => (
+                  {(previewModal.questionnaire.questions ?? []).map((question, index) => (
                     <Card
                       key={question.id}
                       elevation={0}

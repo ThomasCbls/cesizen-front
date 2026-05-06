@@ -10,7 +10,7 @@ interface SimpleRequestConfig {
   method: HttpMethod
   url: string
   data?: unknown
-  params?: Record<string, string | number>
+  params?: Record<string, string | number | undefined>
   requireAuth?: boolean
 }
 
@@ -101,12 +101,15 @@ class ApiClient {
   /**
    * Construit une URL avec des paramètres
    */
-  private buildUrlWithParams(url: string, params?: Record<string, string | number>): string {
+  private buildUrlWithParams(
+    url: string,
+    params?: Record<string, string | number | undefined>,
+  ): string {
     if (!params) return url
 
     const searchParams = new URLSearchParams()
     Object.entries(params).forEach(([key, value]) => {
-      searchParams.set(key, String(value))
+      if (value !== undefined) searchParams.set(key, String(value))
     })
 
     const separator = url.includes('?') ? '&' : '?'
@@ -264,7 +267,7 @@ class ApiClient {
   /**
    * Méthodes HTTP raccourcies avec authentification
    */
-  async get<T>(url: string, params?: Record<string, string | number>): Promise<T> {
+  async get<T>(url: string, params?: Record<string, string | number | undefined>): Promise<T> {
     return this.request<T>({ method: 'GET', url, params })
   }
 
@@ -287,7 +290,10 @@ class ApiClient {
   /**
    * Méthodes publiques (sans authentification)
    */
-  async getPublic<T>(url: string, params?: Record<string, string | number>): Promise<T> {
+  async getPublic<T>(
+    url: string,
+    params?: Record<string, string | number | undefined>,
+  ): Promise<T> {
     return this.request<T>({ method: 'GET', url, params, requireAuth: false })
   }
 

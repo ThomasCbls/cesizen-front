@@ -166,8 +166,8 @@ class ApiClient {
       }
 
       const data: RefreshTokenResponse = await response.json()
-      this.setStoredToken(data.accessToken)
-      return data.accessToken
+      this.setStoredToken(data.access_token)
+      return data.access_token
     } catch (error) {
       console.error('Token refresh failed:', error)
       return null
@@ -354,12 +354,15 @@ class ApiClient {
   /**
    * Construit une URL avec des paramètres
    */
-  private buildUrlWithParams(url: string, params?: Record<string, string | number>): string {
+  private buildUrlWithParams(
+    url: string,
+    params?: Record<string, string | number | undefined>,
+  ): string {
     if (!params) return url
 
     const urlObj = new URL(url)
     Object.entries(params).forEach(([key, value]) => {
-      urlObj.searchParams.set(key, String(value))
+      if (value !== undefined) urlObj.searchParams.set(key, String(value))
     })
 
     return urlObj.toString()
@@ -368,7 +371,7 @@ class ApiClient {
   /**
    * Méthodes HTTP courtes
    */
-  async get<T>(url: string, params?: Record<string, string | number>): Promise<T> {
+  async get<T>(url: string, params?: Record<string, string | number | undefined>): Promise<T> {
     return this.request<T>({
       method: 'GET',
       url,

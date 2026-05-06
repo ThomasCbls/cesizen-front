@@ -1,32 +1,31 @@
 'use client'
 
 import { useAuth } from '@/contexts'
-import { useRouter } from 'next/navigation'
-import { useEffect, ReactNode } from 'react'
 import {
   AppBar,
-  Toolbar,
-  Typography,
   Box,
+  Chip,
   Drawer,
+  IconButton,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  IconButton,
   Stack,
-  Chip,
+  Toolbar,
+  Typography,
 } from '@mui/material'
 import {
-  LayoutDashboard,
-  Users,
-  FileText,
-  ClipboardList,
-  Menu as MenuIcon,
-  LogOut,
   BrainCircuit,
+  ClipboardList,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Menu as MenuIcon,
+  Users,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { ReactNode, useEffect, useState } from 'react'
 
 interface AdminLayoutProps {
   children: ReactNode
@@ -35,11 +34,13 @@ interface AdminLayoutProps {
 const drawerWidth = 260
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { user, logout } = useAuth()
+  const { user, isLoading, logout } = useAuth()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
+    if (isLoading) return
+
     if (!user) {
       router.push('/login')
       return
@@ -49,7 +50,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       router.push('/home')
       return
     }
-  }, [user, router])
+  }, [user, isLoading, router])
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)

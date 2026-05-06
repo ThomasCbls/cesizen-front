@@ -16,17 +16,34 @@ import {
 import { Eye, EyeOff, Lock, User } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import { useAuth, usePublicRoute } from '@/contexts'
+import { useAuth } from '@/contexts'
 import type { LoginRequest } from '@/types'
 
 const LogViewPage = () => {
   // Hooks d'authentification
-  const { login, isLoading: authLoading, error: authError, clearError } = useAuth()
-  usePublicRoute('/home')
+  const {
+    login,
+    isLoading: authLoading,
+    error: authError,
+    clearError,
+    isAuthenticated,
+    user,
+  } = useAuth()
 
   const router = useRouter()
+
+  // Redirection si déjà connecté
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      if (user.role === 'ADMIN') {
+        router.replace('/admin/dashboard')
+      } else {
+        router.replace('/home')
+      }
+    }
+  }, [isAuthenticated, user, router])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -69,9 +86,13 @@ const LogViewPage = () => {
         password,
       }
 
-      await login(credentials)
+      const user = await login(credentials)
 
-      router.push('/home')
+      if (user?.role === 'ADMIN') {
+        router.push('/admin/dashboard')
+      } else {
+        router.push('/home')
+      }
     } catch (error) {
       console.error('Erreur de connexion:', error)
     }

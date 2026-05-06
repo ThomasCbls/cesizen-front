@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
-import { Container, Typography, Stack, Box, Snackbar, Alert } from '@mui/material'
-import { UsersTable, UsersFilters, UserModal, ConfirmDeleteModal } from '../components'
+import { adminService } from '@/lib/services'
+import { Alert, Box, Container, Snackbar, Stack, Typography } from '@mui/material'
+import { useEffect, useMemo, useState } from 'react'
+import { ConfirmDeleteModal, UserModal, UsersFilters, UsersTable } from '../components'
 
 // Types pour les utilisateurs
 interface User {
@@ -71,65 +72,8 @@ export default function UsersManagement() {
   const loadUsers = async () => {
     try {
       setLoading(true)
-
-      // Simulation d'appel API - À remplacer par vraie API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Données mockées
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          email: 'admin@cesizen.fr',
-          prenom: 'Admin',
-          nom: 'CESIZen',
-          role: 'ADMIN',
-          isActive: true,
-          createdAt: new Date('2024-01-15'),
-          lastLoginAt: new Date(),
-        },
-        {
-          id: '2',
-          email: 'marie.dubois@email.com',
-          prenom: 'Marie',
-          nom: 'Dubois',
-          role: 'USER',
-          isActive: true,
-          createdAt: new Date('2024-02-20'),
-          lastLoginAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // Il y a 2 jours
-        },
-        {
-          id: '3',
-          email: 'pierre.martin@email.com',
-          prenom: 'Pierre',
-          nom: 'Martin',
-          role: 'USER',
-          isActive: false,
-          createdAt: new Date('2024-03-10'),
-          lastLoginAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // Il y a 7 jours
-        },
-        {
-          id: '4',
-          email: 'sophie.leroy@email.com',
-          prenom: 'Sophie',
-          nom: 'Leroy',
-          role: 'USER',
-          isActive: true,
-          createdAt: new Date('2024-04-05'),
-          lastLoginAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // Il y a 1 heure
-        },
-        {
-          id: '5',
-          email: 'thomas.bernard@email.com',
-          prenom: 'Thomas',
-          nom: 'Bernard',
-          role: 'ADMIN',
-          isActive: true,
-          createdAt: new Date('2024-01-25'),
-          lastLoginAt: new Date(Date.now() - 30 * 60 * 1000), // Il y a 30 minutes
-        },
-      ]
-
-      setUsers(mockUsers)
+      const { users: usersData } = await adminService.getUsers()
+      setUsers(usersData)
     } catch (error) {
       console.error('Erreur lors du chargement des utilisateurs:', error)
       showSnackbar('Erreur lors du chargement des utilisateurs', 'error')
@@ -164,11 +108,10 @@ export default function UsersManagement() {
   // Actions utilisateur
   const handleToggleActive = async (userId: string, isActive: boolean) => {
     try {
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, isActive } : user)))
-
+      const updatedUser = await adminService.toggleUserActive(userId, isActive)
+      setUsers((prev) =>
+        prev.map((user) => (user.id === userId ? { ...user, ...updatedUser } : user)),
+      )
       showSnackbar(`Utilisateur ${isActive ? 'activé' : 'désactivé'} avec succès`, 'success')
     } catch (error) {
       showSnackbar('Erreur lors de la mise à jour du statut', 'error')
@@ -177,11 +120,10 @@ export default function UsersManagement() {
 
   const handleChangeRole = async (userId: string, role: 'USER' | 'ADMIN') => {
     try {
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      setUsers((prev) => prev.map((user) => (user.id === userId ? { ...user, role } : user)))
-
+      const updatedUser = await adminService.changeUserRole(userId, role)
+      setUsers((prev) =>
+        prev.map((user) => (user.id === userId ? { ...user, ...updatedUser } : user)),
+      )
       showSnackbar(
         `Rôle modifié vers ${role === 'ADMIN' ? 'Administrateur' : 'Utilisateur'}`,
         'success',
@@ -211,22 +153,15 @@ export default function UsersManagement() {
     try {
       setUserModal((prev) => ({ ...prev, loading: true }))
 
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
       if (userData.id) {
-        // Modification
-        setUsers((prev) => prev.map((user) => (user.id === userData.id ? { ...userData } : user)))
-        showSnackbar('Utilisateur modifié avec succès', 'success')
+        // Seul le rôle est modifiable via l'API
+        const updatedUser = await adminService.changeUserRole(userData.id, userData.role)
+        setUsers((prev) =>
+          prev.map((user) => (user.id === userData.id ? { ...user, ...updatedUser } : user)),
+        )
+        showSnackbar('Rôle mis à jour avec succès', 'success')
       } else {
-        // Création
-        const newUser = {
-          ...userData,
-          id: Date.now().toString(),
-          createdAt: new Date(),
-        }
-        setUsers((prev) => [...prev, newUser])
-        showSnackbar('Utilisateur créé avec succès', 'success')
+        showSnackbar("La création d'utilisateurs n'est pas disponible via l'API", 'warning')
       }
 
       setUserModal({ open: false, user: null, loading: false })
@@ -252,10 +187,15 @@ export default function UsersManagement() {
   const handleBulkAction = (action: string) => {
     switch (action) {
       case 'activate':
-        // Activer tous les utilisateurs sélectionnés
-        break
       case 'deactivate':
-        // Désactiver tous les utilisateurs sélectionnés
+        adminService
+          .bulkUpdateUsers(selectedUsers, action as 'activate' | 'deactivate')
+          .then(() => {
+            loadUsers()
+            setSelectedUsers([])
+            showSnackbar(`Utilisateurs mis à jour avec succès`, 'success')
+          })
+          .catch(() => showSnackbar('Erreur lors de la mise à jour', 'error'))
         break
       case 'delete':
         setDeleteModal({
@@ -272,16 +212,13 @@ export default function UsersManagement() {
     try {
       setDeleteModal((prev) => ({ ...prev, loading: true }))
 
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
       if (deleteModal.isBulk) {
-        // Suppression en masse
+        await adminService.bulkUpdateUsers(selectedUsers, 'delete')
         setUsers((prev) => prev.filter((user) => !selectedUsers.includes(user.id!)))
         setSelectedUsers([])
         showSnackbar(`${selectedUsers.length} utilisateurs supprimés`, 'success')
-      } else if (deleteModal.user) {
-        // Suppression individuelle
+      } else if (deleteModal.user?.id) {
+        await adminService.deleteUser(deleteModal.user.id)
         setUsers((prev) => prev.filter((user) => user.id !== deleteModal.user?.id))
         showSnackbar('Utilisateur supprimé avec succès', 'success')
       }

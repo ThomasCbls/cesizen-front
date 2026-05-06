@@ -1,17 +1,21 @@
 'use client'
 
-import { redirect } from 'next/navigation'
 import { useAuth } from '@/contexts'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function AdminPage() {
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
 
-  // Rediriger vers le dashboard admin
-  if (user?.role === 'ADMIN') {
-    redirect('/admin/dashboard')
-  } else {
-    redirect('/login')
-  }
+  useEffect(() => {
+    if (isLoading) return
+    if (user?.role === 'ADMIN') {
+      router.replace('/admin/dashboard')
+    } else {
+      router.replace('/login')
+    }
+  }, [user, isLoading, router])
 
   return null
 }

@@ -1,13 +1,6 @@
 // 🔐 SERVICE AUTHENTIFICATION - CESIZen
 
-import type {
-  LoginRequest,
-  LoginResponse,
-  RefreshTokenResponse,
-  RegisterRequest,
-  RegisterResponse,
-  User,
-} from '@/types'
+import type { LoginRequest, LoginResponse, RefreshTokenResponse, User } from '@/types'
 import { apiClient } from '../api-client-v2'
 
 /**
@@ -15,17 +8,22 @@ import { apiClient } from '../api-client-v2'
  */
 export class AuthService {
   /**
-   * Connexion utilisateur
+   * Normalise le rôle d'un utilisateur en majuscules
+   * (le backend peut renvoyer 'admin' ou 'ADMIN' selon la config)
    */
-  static async login(credentials: LoginRequest): Promise<LoginResponse> {
-    return await apiClient.postPublic<LoginResponse>('/auth/login', credentials)
+  static normalizeUser(user: User): User {
+    return {
+      ...user,
+      role: user.role ? (user.role.toUpperCase() as User['role']) : user.role,
+    }
   }
 
   /**
-   * Inscription utilisateur
+   * Connexion utilisateur
    */
-  static async register(userData: RegisterRequest): Promise<RegisterResponse> {
-    return await apiClient.postPublic<RegisterResponse>('/utilisateurs', userData)
+  static async login(credentials: LoginRequest): Promise<LoginResponse> {
+    const response = await apiClient.postPublic<LoginResponse>('/auth/login', credentials)
+    return { ...response, user: this.normalizeUser(response.user) }
   }
 
   /**
@@ -46,7 +44,8 @@ export class AuthService {
    * Récupère le profil utilisateur actuel
    */
   static async getProfile(): Promise<User> {
-    return await apiClient.get<User>('/auth/profile')
+    const user = await apiClient.get<User>('/auth/profile')
+    return this.normalizeUser(user)
   }
 
   /**
@@ -56,7 +55,7 @@ export class AuthService {
     try {
       const user = await this.getProfile()
       return { valid: true, user }
-    } catch (error) {
+    } catch {
       return { valid: false }
     }
   }

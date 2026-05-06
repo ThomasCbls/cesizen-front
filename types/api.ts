@@ -130,6 +130,7 @@ export interface ApiError {
 }
 
 export interface PaginationParams {
+  [key: string]: string | number | undefined
   page?: number
   limit?: number
   sortBy?: string
@@ -142,7 +143,7 @@ export interface RequestConfig {
   method: HttpMethod
   url: string
   data?: unknown
-  params?: Record<string, string | number>
+  params?: Record<string, string | number | undefined>
   headers?: Record<string, string>
   requireAuth?: boolean
   requestTimeout?: number

@@ -7,7 +7,7 @@ import React, { createContext, useCallback, useContext, useEffect, useReducer } 
 
 interface AuthContextType extends AuthState {
   // Actions
-  login: (credentials: LoginRequest) => Promise<void>
+  login: (credentials: LoginRequest) => Promise<User>
   register: (userData: RegisterRequest) => Promise<void>
   logout: () => Promise<void>
   refreshAuth: () => Promise<void>
@@ -126,6 +126,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Stocker aussi en cookie pour que le middleware server-side puisse le lire
     document.cookie = `${config.authTokenKey}=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
+
+    // Stocker le rôle (issu de GET /auth/profile) pour la protection des routes admin
+    if (user.role) {
+      document.cookie = `cesizen_user_role=${user.role}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
+    }
   }, [])
 
   const clearStoredAuth = useCallback((): void => {
@@ -134,14 +139,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
     localStorage.removeItem(config.authTokenKey)
     localStorage.removeItem(config.authUserKey)
 
-    // Supprimer aussi le cookie
+    // Supprimer aussi les cookies
     document.cookie = `${config.authTokenKey}=; path=/; max-age=0`
+    document.cookie = `cesizen_user_role=; path=/; max-age=0`
   }, [])
 
   // ACTIONS
 
   const login = useCallback(
-    async (credentials: LoginRequest): Promise<void> => {
+    async (credentials: LoginRequest): Promise<User> => {
       try {
         dispatch({ type: 'AUTH_START' })
 
@@ -161,6 +167,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
             token: response.access_token,
           },
         })
+
+        return response.user
       } catch (error: unknown) {
         console.error('Login error details:', error)
         const errorMessage =
@@ -247,11 +255,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
           const refreshResponse = await AuthService.refreshToken()
           if (refreshResponse.access_token) {
-            storeAuth(tokenCheck.user || storedUser, refreshResponse.access_token)
+            // Récupérer le profil frais avec le nouveau token pour obtenir le rôle à jour
+            const freshUser = await AuthService.getProfile()
+            storeAuth(freshUser, refreshResponse.access_token)
             dispatch({
               type: 'AUTH_SUCCESS',
               payload: {
-                user: tokenCheck.user || storedUser,
+                user: freshUser,
                 token: refreshResponse.access_token,
               },
             })
@@ -369,10 +379,11 @@ export function usePublicRoute(redirectTo: string = '/home'): AuthContextType {
   useEffect(() => {
     if (!auth.isLoading && auth.isAuthenticated) {
       if (typeof window !== 'undefined') {
-        window.location.href = redirectTo
+        const destination = auth.user?.role === 'ADMIN' ? '/admin/dashboard' : redirectTo
+        window.location.href = destination
       }
     }
-  }, [auth.isLoading, auth.isAuthenticated, redirectTo])
+  }, [auth.isLoading, auth.isAuthenticated, auth.user?.role, redirectTo])
 
   return auth
 }

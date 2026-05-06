@@ -1,6 +1,7 @@
 // 🎯 SERVICES API - Export centralisé CESIZen
 
 // Export des services
+export * from './admin.service'
 export * from './auth.service'
 export * from './diagnostic.service'
 export * from './questionnaire.service'

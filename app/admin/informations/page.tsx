@@ -1,40 +1,23 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { adminService, type AdminContent } from '@/lib/services'
 import {
-  Container,
-  Typography,
-  Stack,
-  Box,
-  Snackbar,
   Alert,
+  Box,
+  Container,
   Dialog,
   DialogContent,
   DialogTitle,
   IconButton,
+  Snackbar,
+  Stack,
+  Typography,
 } from '@mui/material'
 import { X } from 'lucide-react'
-import { ContentTable, ContentFilters, ContentModal, ConfirmDeleteModal } from '../components'
+import { useEffect, useMemo, useState } from 'react'
+import { ConfirmDeleteModal, ContentFilters, ContentModal, ContentTable } from '../components'
 
-// Types pour les contenus
-interface Content {
-  id?: string
-  title: string
-  slug: string
-  type: 'page' | 'article' | 'menu'
-  status: 'draft' | 'published' | 'archived'
-  isActive: boolean
-  author?: {
-    prenom: string
-    nom: string
-  }
-  createdAt?: Date
-  updatedAt?: Date
-  publishedAt?: Date
-  excerpt?: string
-  content: string
-  order?: number
-}
+type Content = AdminContent
 
 interface SnackbarState {
   open: boolean
@@ -102,78 +85,8 @@ export default function ContentManagement() {
   const loadContents = async () => {
     try {
       setLoading(true)
-
-      // Simulation d'appel API - À remplacer par vraie API
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Données mockées
-      const mockContents: Content[] = [
-        {
-          id: '1',
-          title: 'Guide de gestion du stress au travail',
-          slug: 'guide-gestion-stress-travail',
-          type: 'article',
-          status: 'published',
-          isActive: true,
-          author: { prenom: 'Admin', nom: 'CESIZen' },
-          createdAt: new Date('2024-01-15'),
-          updatedAt: new Date('2024-01-20'),
-          publishedAt: new Date('2024-01-20'),
-          excerpt:
-            'Découvrez des techniques efficaces pour gérer le stress professionnel et améliorer votre bien-être au quotidien.',
-          content:
-            '# Guide de gestion du stress au travail\n\nLe stress au travail est un phénomène courant qui peut avoir des impacts significatifs sur la santé et la productivité.\n\n## Techniques de relaxation\n\n- Respiration profonde\n- Méditation de pleine conscience\n- Exercices physiques réguliers\n\n## Organisation du travail\n\n- Priorisation des tâches\n- Gestion du temps\n- Pauses régulières',
-          order: 1,
-        },
-        {
-          id: '2',
-          title: "Conditions générales d'utilisation",
-          slug: 'conditions-generales-utilisation',
-          type: 'page',
-          status: 'published',
-          isActive: true,
-          author: { prenom: 'Admin', nom: 'CESIZen' },
-          createdAt: new Date('2024-01-10'),
-          updatedAt: new Date('2024-01-10'),
-          publishedAt: new Date('2024-01-10'),
-          content:
-            "# Conditions générales d'utilisation\n\n## Article 1 - Objet\n\nLes présentes conditions générales...\n\n## Article 2 - Acceptation\n\nL'utilisation de la plateforme implique...",
-          order: 10,
-        },
-        {
-          id: '3',
-          title: "Burnout : signaux d'alarme",
-          slug: 'burnout-signaux-alarme',
-          type: 'article',
-          status: 'draft',
-          isActive: false,
-          author: { prenom: 'Marie', nom: 'Dubois' },
-          createdAt: new Date('2024-02-01'),
-          updatedAt: new Date('2024-02-05'),
-          excerpt:
-            "Reconnaître les premiers signes du burnout pour agir avant qu'il ne soit trop tard.",
-          content:
-            "# Burnout : reconnaître les signaux d'alarme\n\n*Article en cours de rédaction*\n\nLe burnout, ou épuisement professionnel, est un état de fatigue physique, émotionnelle et mentale...",
-          order: 2,
-        },
-        {
-          id: '4',
-          title: "Ressources d'aide",
-          slug: 'ressources-aide',
-          type: 'menu',
-          status: 'published',
-          isActive: true,
-          author: { prenom: 'Admin', nom: 'CESIZen' },
-          createdAt: new Date('2024-01-12'),
-          updatedAt: new Date('2024-01-12'),
-          publishedAt: new Date('2024-01-12'),
-          content:
-            "# Ressources d'aide\n\n## Numéros utiles\n\n- **SOS Amitié**: 09 72 39 40 50\n- **Suicide Écoute**: 01 45 39 40 00\n\n## Sites web recommandés\n\n- [Psycom](http://www.psycom.org)\n- [France Dépression](http://www.france-depression.org)",
-          order: 5,
-        },
-      ]
-
-      setContents(mockContents)
+      const { contents: data } = await adminService.getContents()
+      setContents(data)
     } catch (error) {
       console.error('Erreur lors du chargement des contenus:', error)
       showSnackbar('Erreur lors du chargement des contenus', 'error')
@@ -209,13 +122,10 @@ export default function ContentManagement() {
   // Actions contenu
   const handleToggleActive = async (contentId: string, isActive: boolean) => {
     try {
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
+      const updated = await adminService.toggleContentActive(contentId, isActive)
       setContents((prev) =>
-        prev.map((content) => (content.id === contentId ? { ...content, isActive } : content)),
+        prev.map((content) => (content.id === contentId ? { ...content, ...updated } : content)),
       )
-
       showSnackbar(`Contenu ${isActive ? 'rendu visible' : 'masqué'} avec succès`, 'success')
     } catch (error) {
       showSnackbar('Erreur lors de la mise à jour de la visibilité', 'error')
@@ -247,22 +157,16 @@ export default function ContentManagement() {
 
   const handleDuplicateContent = async (content: Content) => {
     try {
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      const duplicatedContent = {
-        ...content,
-        id: Date.now().toString(),
+      // Pas d'endpoint de duplication dans l'API : création d'une copie via createContent
+      const copied = await adminService.createContent({
         title: `${content.title} (Copie)`,
-        slug: `${content.slug}-copie`,
-        status: 'draft' as const,
+        slug: content.slug ? `${content.slug}-copie` : undefined,
+        type: content.type,
+        content: content.content,
         isActive: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        publishedAt: undefined,
-      }
-
-      setContents((prev) => [...prev, duplicatedContent])
+        order: content.order,
+      })
+      setContents((prev) => [...prev, copied])
       showSnackbar('Contenu dupliqué avec succès', 'success')
     } catch (error) {
       showSnackbar('Erreur lors de la duplication', 'error')
@@ -273,45 +177,25 @@ export default function ContentManagement() {
     try {
       setContentModal((prev) => ({ ...prev, loading: true }))
 
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
       if (contentData.id) {
-        // Modification
+        const updated = await adminService.updateContent(contentData.id, contentData)
         setContents((prev) =>
           prev.map((content) =>
-            content.id === contentData.id
-              ? {
-                  ...contentData,
-                  updatedAt: new Date(),
-                  publishedAt:
-                    contentData.status === 'published' ? new Date() : contentData.publishedAt,
-                  author: prev.find((c) => c.id === contentData.id)?.author || {
-                    prenom: 'Admin',
-                    nom: 'CESIZen',
-                  },
-                }
-              : content,
+            content.id === contentData.id ? { ...content, ...updated } : content,
           ),
         )
         showSnackbar('Contenu modifié avec succès', 'success')
       } else {
-        // Création
-        const newContent = {
-          ...contentData,
-          id: Date.now().toString(),
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          publishedAt: contentData.status === 'published' ? new Date() : undefined,
-          author: { prenom: 'Admin', nom: 'CESIZen' }, // À remplacer par l'utilisateur connecté
-        }
-        setContents((prev) => [...prev, newContent])
+        const created = await adminService.createContent(contentData)
+        setContents((prev) => [...prev, created])
         showSnackbar('Contenu créé avec succès', 'success')
       }
 
       setContentModal({ open: false, content: null, loading: false })
     } catch (error) {
-      showSnackbar('Erreur lors de la sauvegarde', 'error')
+      console.error('Erreur lors de la sauvegarde du contenu:', error)
+      const message = error instanceof Error ? error.message : 'Erreur lors de la sauvegarde'
+      showSnackbar(message, 'error')
     } finally {
       setContentModal((prev) => ({ ...prev, loading: false }))
     }
@@ -327,21 +211,13 @@ export default function ContentManagement() {
   }
 
   const handleBulkAction = (action: string) => {
-    switch (action) {
-      case 'publish':
-      case 'draft':
-      case 'activate':
-      case 'deactivate':
-        // Implémenter les actions en masse
-        break
-      case 'delete':
-        setDeleteModal({
-          open: true,
-          content: null,
-          isBulk: true,
-          loading: false,
-        })
-        break
+    if (action === 'delete') {
+      setDeleteModal({
+        open: true,
+        content: null,
+        isBulk: true,
+        loading: false,
+      })
     }
   }
 
@@ -349,16 +225,13 @@ export default function ContentManagement() {
     try {
       setDeleteModal((prev) => ({ ...prev, loading: true }))
 
-      // Simulation API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
       if (deleteModal.isBulk) {
-        // Suppression en masse
+        await Promise.all(selectedContents.map((id) => adminService.deleteContent(id)))
         setContents((prev) => prev.filter((content) => !selectedContents.includes(content.id!)))
         setSelectedContents([])
         showSnackbar(`${selectedContents.length} contenus supprimés`, 'success')
-      } else if (deleteModal.content) {
-        // Suppression individuelle
+      } else if (deleteModal.content?.id) {
+        await adminService.deleteContent(deleteModal.content.id)
         setContents((prev) => prev.filter((content) => content.id !== deleteModal.content?.id))
         showSnackbar('Contenu supprimé avec succès', 'success')
       }

@@ -1,6 +1,44 @@
 import { apiClient } from '../api-client-v2'
 
-// Types pour les API admin
+// ============================================================
+// TYPES BRUTS DE L'API (snake_case, nommage backend)
+// ============================================================
+
+export interface ApiUtilisateur {
+  id_utilisateur: string
+  nom: string
+  prenom: string
+  email: string
+  role: 'user' | 'admin'
+  est_actif: boolean
+  date_inscription: string
+}
+
+export interface UserStats {
+  total: number
+  active: number
+  inactive: number
+  admins: number
+  users: number
+  recentRegistrations: number
+}
+
+export interface ApiInformation {
+  id_information: number
+  titre: string
+  contenu: string
+  type_contenu: string
+  slug?: string
+  est_actif: boolean
+  ordre_affichage: number
+  date_creation: string
+  date_modification: string
+}
+
+// ============================================================
+// TYPES UI (mappés depuis les types bruts, utilisés par les composants)
+// ============================================================
+
 export interface AdminUser {
   id: string
   email: string
@@ -9,21 +47,16 @@ export interface AdminUser {
   role: 'USER' | 'ADMIN'
   isActive: boolean
   createdAt: Date
-  updatedAt: Date
-  lastLoginAt?: Date
 }
 
 export interface AdminContent {
   id: string
   title: string
   slug: string
-  type: 'page' | 'article' | 'menu'
-  status: 'draft' | 'published' | 'archived'
+  type: string
+  status: string
   isActive: boolean
-  author: {
-    prenom: string
-    nom: string
-  }
+  author?: { prenom: string; nom: string }
   excerpt?: string
   content: string
   order?: number
@@ -36,16 +69,12 @@ export interface AdminQuestionnaire {
   id: string
   title: string
   description: string
-  category: 'STRESS' | 'ANXIETY' | 'BURNOUT'
+  category: string
   isActive: boolean
   questions: AdminQuestion[]
   createdAt: Date
   updatedAt: Date
-  stats?: {
-    totalResponses: number
-    avgScore: number
-    lastResponseAt?: Date
-  }
+  createur_id?: string
 }
 
 export interface AdminQuestion {
@@ -62,22 +91,37 @@ export interface AdminQuestionOption {
 }
 
 export interface AdminDashboardStats {
-  totalUsers: number
-  activeUsers: number
-  totalDiagnostics: number
-  totalContent: number
-  newUsersThisWeek: number
-  diagnosticsThisWeek: number
+  [key: string]: unknown
 }
 
-export interface AdminActivity {
-  id: string
-  type: 'user_registration' | 'diagnostic_completed' | 'content_created' | 'questionnaire_updated'
-  description: string
-  timestamp: Date
-  user?: {
-    prenom: string
-    nom: string
+// ============================================================
+// MAPPERS API → UI
+// ============================================================
+
+function mapUtilisateur(api: ApiUtilisateur): AdminUser {
+  return {
+    id: api.id_utilisateur,
+    email: api.email,
+    prenom: api.prenom,
+    nom: api.nom,
+    role: api.role.toUpperCase() as 'USER' | 'ADMIN',
+    isActive: api.est_actif,
+    createdAt: new Date(api.date_inscription),
+  }
+}
+
+function mapInformation(api: ApiInformation): AdminContent {
+  return {
+    id: String(api.id_information),
+    title: api.titre,
+    slug: api.slug ?? '',
+    type: api.type_contenu,
+    status: api.est_actif ? 'published' : 'archived',
+    isActive: api.est_actif,
+    content: api.contenu,
+    order: api.ordre_affichage,
+    createdAt: api.date_creation ? new Date(api.date_creation) : new Date(),
+    updatedAt: api.date_modification ? new Date(api.date_modification) : new Date(),
   }
 }
 
@@ -85,123 +129,179 @@ export interface AdminActivity {
 class AdminService {
   // === DASHBOARD ===
   async getDashboardStats(): Promise<AdminDashboardStats> {
-    return apiClient.get<AdminDashboardStats>('/admin/dashboard/stats')
+    return apiClient.get<AdminDashboardStats>('/admin/dashboard')
   }
 
-  async getRecentActivity(limit = 10): Promise<AdminActivity[]> {
-    return apiClient.get<AdminActivity[]>(`/admin/dashboard/activity?limit=${limit}`)
+  // === UTILISATEURS ===
+  async getUsers(): Promise<{ users: AdminUser[]; total: number }> {
+    const raw = await apiClient.get<
+      ApiUtilisateur[] | { data: ApiUtilisateur[] } | { utilisateurs: ApiUtilisateur[] }
+    >('/admin/utilisateurs')
+    let arr: ApiUtilisateur[]
+    if (Array.isArray(raw)) arr = raw
+    else if ('data' in raw && Array.isArray((raw as { data: unknown }).data))
+      arr = (raw as { data: ApiUtilisateur[] }).data
+    else if (
+      'utilisateurs' in raw &&
+      Array.isArray((raw as { utilisateurs: unknown }).utilisateurs)
+    )
+      arr = (raw as { utilisateurs: ApiUtilisateur[] }).utilisateurs
+    else arr = []
+    const users = arr.map(mapUtilisateur)
+    return { users, total: users.length }
   }
 
-  // === GESTION UTILISATEURS ===
-  async getUsers(params?: {
-    search?: string
-    role?: 'all' | 'USER' | 'ADMIN'
-    status?: 'all' | 'active' | 'inactive'
-    page?: number
-    limit?: number
-  }): Promise<{ users: AdminUser[]; total: number }> {
-    const queryParams = new URLSearchParams()
-    if (params?.search) queryParams.set('search', params.search)
-    if (params?.role && params.role !== 'all') queryParams.set('role', params.role)
-    if (params?.status && params.status !== 'all') queryParams.set('status', params.status)
-    if (params?.page) queryParams.set('page', params.page.toString())
-    if (params?.limit) queryParams.set('limit', params.limit.toString())
-
-    return apiClient.get<{ users: AdminUser[]; total: number }>(`/admin/users?${queryParams}`)
-  }
-
-  async createUser(userData: Partial<AdminUser> & { password: string }): Promise<AdminUser> {
-    return apiClient.post<AdminUser>('/admin/users', userData)
-  }
-
-  async updateUser(userId: string, userData: Partial<AdminUser>): Promise<AdminUser> {
-    return apiClient.put<AdminUser>(`/admin/users/${userId}`, userData)
-  }
-
-  async deleteUser(userId: string): Promise<void> {
-    return apiClient.delete(`/admin/users/${userId}`)
+  async getUserStats(): Promise<UserStats> {
+    return apiClient.get<UserStats>('/admin/utilisateurs/stats')
   }
 
   async toggleUserActive(userId: string, isActive: boolean): Promise<AdminUser> {
-    return apiClient.patch<AdminUser>(`/admin/users/${userId}/status`, { isActive })
+    const endpoint = isActive
+      ? `/admin/utilisateurs/${userId}/activate`
+      : `/admin/utilisateurs/${userId}/deactivate`
+    const data = await apiClient.patch<ApiUtilisateur>(endpoint)
+    return mapUtilisateur(data)
   }
 
   async changeUserRole(userId: string, role: 'USER' | 'ADMIN'): Promise<AdminUser> {
-    return apiClient.patch<AdminUser>(`/admin/users/${userId}/role`, { role })
+    const data = await apiClient.patch<ApiUtilisateur>(`/admin/utilisateurs/${userId}/role`, {
+      role: role.toLowerCase(),
+    })
+    return mapUtilisateur(data)
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    return apiClient.delete(`/admin/utilisateurs/${userId}`)
   }
 
   async bulkUpdateUsers(
     userIds: string[],
     action: 'activate' | 'deactivate' | 'delete',
   ): Promise<void> {
-    return apiClient.post('/admin/users/bulk', { userIds, action })
-  }
-
-  // === GESTION CONTENUS ===
-  async getContents(params?: {
-    search?: string
-    type?: 'all' | 'page' | 'article' | 'menu'
-    status?: 'all' | 'draft' | 'published' | 'archived'
-    active?: 'all' | 'active' | 'inactive'
-    page?: number
-    limit?: number
-  }): Promise<{ contents: AdminContent[]; total: number }> {
-    const queryParams = new URLSearchParams()
-    if (params?.search) queryParams.set('search', params.search)
-    if (params?.type && params.type !== 'all') queryParams.set('type', params.type)
-    if (params?.status && params.status !== 'all') queryParams.set('status', params.status)
-    if (params?.active && params.active !== 'all') queryParams.set('active', params.active)
-    if (params?.page) queryParams.set('page', params.page.toString())
-    if (params?.limit) queryParams.set('limit', params.limit.toString())
-
-    return apiClient.get<{ contents: AdminContent[]; total: number }>(
-      `/admin/contents?${queryParams}`,
+    await Promise.all(
+      userIds.map((id) => {
+        if (action === 'activate') return this.toggleUserActive(id, true)
+        if (action === 'deactivate') return this.toggleUserActive(id, false)
+        return this.deleteUser(id)
+      }),
     )
   }
 
+  // === INFORMATIONS ===
+  async getPublicContents(): Promise<AdminContent[]> {
+    const raw = await apiClient.getPublic<
+      ApiInformation[] | { data: ApiInformation[] } | { informations: ApiInformation[] }
+    >('/informations')
+    let arr: ApiInformation[]
+    if (Array.isArray(raw)) arr = raw
+    else if ('data' in raw && Array.isArray((raw as { data: unknown }).data))
+      arr = (raw as { data: ApiInformation[] }).data
+    else if (
+      'informations' in raw &&
+      Array.isArray((raw as { informations: unknown }).informations)
+    )
+      arr = (raw as { informations: ApiInformation[] }).informations
+    else arr = []
+    return arr.map(mapInformation)
+  }
+
+  async getContents(params?: {
+    type?: string
+  }): Promise<{ contents: AdminContent[]; total: number }> {
+    const query = params?.type ? `?type=${params.type}` : ''
+    const raw = await apiClient.get<
+      ApiInformation[] | { data: ApiInformation[] } | { informations: ApiInformation[] }
+    >(`/admin/informations${query}`)
+    let arr: ApiInformation[]
+    if (Array.isArray(raw)) arr = raw
+    else if ('data' in raw && Array.isArray((raw as { data: unknown }).data))
+      arr = (raw as { data: ApiInformation[] }).data
+    else if (
+      'informations' in raw &&
+      Array.isArray((raw as { informations: unknown }).informations)
+    )
+      arr = (raw as { informations: ApiInformation[] }).informations
+    else arr = []
+    const contents = arr.map(mapInformation)
+    return { contents, total: contents.length }
+  }
+
   async createContent(contentData: Partial<AdminContent>): Promise<AdminContent> {
-    return apiClient.post<AdminContent>('/admin/contents', contentData)
+    const body = {
+      titre: contentData.title,
+      contenu: contentData.content,
+      type_contenu: contentData.type,
+      slug: contentData.slug,
+      est_actif: contentData.isActive ?? true,
+      ordre_affichage: contentData.order ?? 0,
+    }
+    const data = await apiClient.post<ApiInformation>('/admin/informations', body)
+    return mapInformation(data)
   }
 
   async updateContent(
     contentId: string,
     contentData: Partial<AdminContent>,
   ): Promise<AdminContent> {
-    return apiClient.put<AdminContent>(`/admin/contents/${contentId}`, contentData)
-  }
-
-  async deleteContent(contentId: string): Promise<void> {
-    return apiClient.delete(`/admin/contents/${contentId}`)
-  }
-
-  async duplicateContent(contentId: string): Promise<AdminContent> {
-    return apiClient.post<AdminContent>(`/admin/contents/${contentId}/duplicate`)
+    const body = {
+      titre: contentData.title,
+      contenu: contentData.content,
+      type_contenu: contentData.type,
+      slug: contentData.slug,
+      est_actif: contentData.isActive,
+      ordre_affichage: contentData.order,
+    }
+    const data = await apiClient.patch<ApiInformation>(`/admin/informations/${contentId}`, body)
+    return mapInformation(data)
   }
 
   async toggleContentActive(contentId: string, isActive: boolean): Promise<AdminContent> {
-    return apiClient.patch<AdminContent>(`/admin/contents/${contentId}/status`, { isActive })
+    if (!isActive) {
+      const data = await apiClient.patch<ApiInformation>(
+        `/admin/informations/${contentId}/deactivate`,
+      )
+      return mapInformation(data)
+    }
+    const data = await apiClient.patch<ApiInformation>(`/admin/informations/${contentId}`, {
+      est_actif: true,
+    })
+    return mapInformation(data)
   }
 
-  async reorderContent(contentId: string, newOrder: number): Promise<void> {
-    return apiClient.patch(`/admin/contents/${contentId}/order`, { order: newOrder })
+  async deleteContent(contentId: string): Promise<void> {
+    return apiClient.delete(`/admin/informations/${contentId}`)
   }
 
-  async bulkUpdateContents(
-    contentIds: string[],
-    action: 'publish' | 'draft' | 'activate' | 'deactivate' | 'delete',
-  ): Promise<void> {
-    return apiClient.post('/admin/contents/bulk', { contentIds, action })
-  }
-
-  // === GESTION QUESTIONNAIRES ===
+  // === QUESTIONNAIRES ===
   async getQuestionnaires(): Promise<AdminQuestionnaire[]> {
-    return apiClient.get<AdminQuestionnaire[]>('/admin/questionnaires')
+    const data = await apiClient.get<
+      | AdminQuestionnaire[]
+      | { data: AdminQuestionnaire[] }
+      | { questionnaires: AdminQuestionnaire[] }
+    >('/admin/questionnaires')
+    if (Array.isArray(data)) return data
+    if ('data' in data && Array.isArray((data as { data: unknown }).data))
+      return (data as { data: AdminQuestionnaire[] }).data
+    if (
+      'questionnaires' in data &&
+      Array.isArray((data as { questionnaires: unknown }).questionnaires)
+    )
+      return (data as { questionnaires: AdminQuestionnaire[] }).questionnaires
+    return []
+  }
+
+  async getQuestionnaireWithQuestions(questionnaireId: string): Promise<AdminQuestionnaire> {
+    const [questionnaire, questions] = await Promise.all([
+      apiClient.getPublic<AdminQuestionnaire>(`/questionnaires/${questionnaireId}`),
+      apiClient.get<AdminQuestion[]>(`/admin/questionnaires/${questionnaireId}/questions`),
+    ])
+    return { ...questionnaire, questions }
   }
 
   async createQuestionnaire(
     questionnaireData: Partial<AdminQuestionnaire>,
   ): Promise<AdminQuestionnaire> {
-    return apiClient.post<AdminQuestionnaire>('/admin/questionnaires', questionnaireData)
+    return apiClient.post<AdminQuestionnaire>('/questionnaires', questionnaireData)
   }
 
   async updateQuestionnaire(
@@ -209,85 +309,20 @@ class AdminService {
     questionnaireData: Partial<AdminQuestionnaire>,
   ): Promise<AdminQuestionnaire> {
     return apiClient.put<AdminQuestionnaire>(
-      `/admin/questionnaires/${questionnaireId}`,
+      `/questionnaires/${questionnaireId}`,
       questionnaireData,
     )
   }
 
   async deleteQuestionnaire(questionnaireId: string): Promise<void> {
-    return apiClient.delete(`/admin/questionnaires/${questionnaireId}`)
-  }
-
-  async duplicateQuestionnaire(questionnaireId: string): Promise<AdminQuestionnaire> {
-    return apiClient.post<AdminQuestionnaire>(`/admin/questionnaires/${questionnaireId}/duplicate`)
+    return apiClient.delete(`/questionnaires/${questionnaireId}`)
   }
 
   async toggleQuestionnaireActive(
     questionnaireId: string,
     isActive: boolean,
   ): Promise<AdminQuestionnaire> {
-    return apiClient.patch<AdminQuestionnaire>(`/admin/questionnaires/${questionnaireId}/status`, {
-      isActive,
-    })
-  }
-
-  async getQuestionnaireStats(questionnaireId: string): Promise<{
-    totalResponses: number
-    avgScore: number
-    scoreDistribution: { range: string; count: number }[]
-    responsesOverTime: { date: string; count: number }[]
-  }> {
-    return apiClient.get(`/admin/questionnaires/${questionnaireId}/stats`)
-  }
-
-  // === UTILITAIRES ===
-  async checkSlugAvailability(
-    slug: string,
-    type: 'content',
-    excludeId?: string,
-  ): Promise<{ available: boolean }> {
-    const params = new URLSearchParams({ slug, type })
-    if (excludeId) params.set('excludeId', excludeId)
-    return apiClient.get<{ available: boolean }>(`/admin/check-slug?${params}`)
-  }
-
-  async uploadImage(file: File): Promise<{ url: string; filename: string }> {
-    const formData = new FormData()
-    formData.append('image', file)
-    return apiClient.post<{ url: string; filename: string }>('/admin/upload/image', formData)
-  }
-
-  // === LOGS ET SURVEILLANCE ===
-  async getSystemLogs(params?: {
-    level?: 'info' | 'warn' | 'error'
-    from?: Date
-    to?: Date
-    limit?: number
-  }): Promise<
-    {
-      id: string
-      timestamp: Date
-      level: string
-      message: string
-      context?: Record<string, unknown>
-    }[]
-  > {
-    const queryParams = new URLSearchParams()
-    if (params?.level) queryParams.set('level', params.level)
-    if (params?.from) queryParams.set('from', params.from.toISOString())
-    if (params?.to) queryParams.set('to', params.to.toISOString())
-    if (params?.limit) queryParams.set('limit', params.limit.toString())
-
-    return apiClient.get(`/admin/logs?${queryParams}`)
-  }
-
-  async exportData(
-    type: 'users' | 'contents' | 'questionnaires' | 'responses',
-    format: 'csv' | 'json' = 'csv',
-  ): Promise<Blob> {
-    return apiClient.get(`/admin/export/${type}?format=${format}`, {
-      responseType: 'blob',
-    })
+    return apiClient.put<AdminQuestionnaire>(`/questionnaires/${questionnaireId}`, { isActive })
   }
 }
 

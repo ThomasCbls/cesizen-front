@@ -1,6 +1,7 @@
 'use client'
 
 import { useRequireAuth } from '@/contexts'
+import { adminService, type AdminContent } from '@/lib/services'
 import {
   AppBar,
   Avatar,
@@ -9,7 +10,6 @@ import {
   Card,
   CardActionArea,
   CardContent,
-  CardMedia,
   Chip,
   Container,
   Divider,
@@ -17,56 +17,43 @@ import {
   ListItemIcon,
   Menu,
   MenuItem,
+  Skeleton,
   Stack,
   Toolbar,
   Tooltip,
   Typography,
   useTheme,
 } from '@mui/material'
-import { BrainIcon, LogOut, Newspaper, Settings, Target, TrendingUp } from 'lucide-react'
+import {
+  BrainIcon,
+  LayoutDashboard,
+  LogOut,
+  Newspaper,
+  Settings,
+  Target,
+  TrendingUp,
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import React from 'react'
-
-// Articles temporaires (à remplacer par fetch depuis le backend)
-const adminArticles = [
-  {
-    id: 1,
-    title: "Comprendre l'échelle de Holmes et Rahe",
-    summary:
-      'Découvrez comment les événements de vie impactent votre niveau de stress selon cette méthode scientifique.',
-    category: 'Prévention',
-    image:
-      'https://images.unsplash.com/photo-1517021897933-0e0319cfbc28?auto=format&fit=crop&w=600&q=80',
-    date: '12 Jan 2024',
-  },
-  {
-    id: 2,
-    title: '5 techniques de respiration immédiate',
-    summary: 'Apprenez la cohérence cardiaque pour réduire votre anxiété en moins de 5 minutes.',
-    category: 'Conseil',
-    image:
-      'https://images.unsplash.com/photo-1506126613408-eca07ce68773?auto=format&fit=crop&w=600&q=80',
-    date: '10 Jan 2024',
-  },
-  {
-    id: 3,
-    title: "L'importance du sommeil sur le mental",
-    summary: "Une bonne hygiène de sommeil est le premier pilier d'une bonne santé mentale.",
-    category: 'Santé',
-    image:
-      'https://images.unsplash.com/photo-1541781777621-713b4331e21e?auto=format&fit=crop&w=600&q=80',
-    date: '08 Jan 2024',
-  },
-]
+import React, { useEffect, useState } from 'react'
 
 const HomePage = () => {
-  // Nouveau système d'authentification
   const { user, logout, isLoading } = useRequireAuth()
-
+  const [articles, setArticles] = useState<AdminContent[]>([])
+  const [articlesLoading, setArticlesLoading] = useState(true)
   const theme = useTheme()
   const router = useRouter()
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
+
+  useEffect(() => {
+    adminService
+      .getPublicContents()
+      .then((contents) => {
+        setArticles(contents.filter((c) => c.isActive))
+      })
+      .catch(() => setArticles([]))
+      .finally(() => setArticlesLoading(false))
+  }, [])
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget)
   const handleClose = () => setAnchorEl(null)
@@ -102,6 +89,7 @@ const HomePage = () => {
     )
   }
 
+  console.log('🚀 ~ HomePage ~ user:', user?.role)
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#f0f4f8' }}>
       <AppBar
@@ -190,6 +178,19 @@ const HomePage = () => {
       >
         {user && (
           <>
+            {user.role === 'ADMIN' && (
+              <MenuItem
+                onClick={() => {
+                  handleClose()
+                  router.push('/admin/dashboard')
+                }}
+              >
+                <ListItemIcon>
+                  <LayoutDashboard size={16} />
+                </ListItemIcon>
+                Administration
+              </MenuItem>
+            )}
             <MenuItem onClick={goToSettings}>
               <ListItemIcon>
                 <Settings size={16} />
@@ -259,71 +260,79 @@ const HomePage = () => {
           </Stack>
 
           <Box display="grid" gridTemplateColumns="repeat(auto-fit, minmax(300px, 1fr))" gap={3}>
-            {adminArticles.map((article) => (
-              <Card
-                key={article.id}
-                elevation={0}
-                sx={{
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 3,
-                  transition: '0.3s',
-                  '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                  },
-                }}
-              >
-                <CardActionArea
-                  sx={{
-                    flexGrow: 1,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'flex-start',
-                  }}
-                >
-                  <CardMedia
-                    component="img"
-                    height="180"
-                    image={article.image}
-                    alt={article.title}
-                  />
-                  <CardContent>
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      mb={1}
+            {articlesLoading
+              ? [0, 1, 2].map((i) => (
+                  <Skeleton key={i} variant="rectangular" height={280} sx={{ borderRadius: 3 }} />
+                ))
+              : articles.slice(0, 6).map((article) => (
+                  <Card
+                    key={article.id}
+                    elevation={0}
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 3,
+                      transition: '0.3s',
+                      '&:hover': {
+                        transform: 'translateY(-4px)',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                      },
+                    }}
+                  >
+                    <CardActionArea
+                      sx={{
+                        flexGrow: 1,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                      }}
                     >
-                      <Chip
-                        label={article.category}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                      />
-                      <Typography variant="caption" color="text.secondary">
-                        {article.date}
-                      </Typography>
-                    </Stack>
-                    <Typography
-                      gutterBottom
-                      variant="h6"
-                      component="div"
-                      fontWeight="bold"
-                      lineHeight={1.2}
-                    >
-                      {article.title}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {article.summary}
-                    </Typography>
-                  </CardContent>
-                </CardActionArea>
-              </Card>
-            ))}
+                      <CardContent>
+                        <Stack
+                          direction="row"
+                          justifyContent="space-between"
+                          alignItems="center"
+                          mb={1}
+                        >
+                          <Chip
+                            label={article.type}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                          />
+                          <Typography variant="caption" color="text.secondary">
+                            {article.updatedAt
+                              ? new Date(article.updatedAt).toLocaleDateString('fr-FR', {
+                                  day: '2-digit',
+                                  month: 'short',
+                                  year: 'numeric',
+                                })
+                              : ''}
+                          </Typography>
+                        </Stack>
+                        <Typography
+                          gutterBottom
+                          variant="h6"
+                          component="div"
+                          fontWeight="bold"
+                          lineHeight={1.2}
+                        >
+                          {article.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {article.content
+                            ? article.content.length > 150
+                              ? article.content.slice(0, 150) + '...'
+                              : article.content
+                            : ''}
+                        </Typography>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                ))}
           </Box>
         </Box>
       </Container>

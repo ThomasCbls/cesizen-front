@@ -1,34 +1,34 @@
 'use client'
 
-import { useState } from 'react'
 import {
+  Checkbox,
+  Chip,
+  IconButton,
+  LinearProgress,
+  Menu,
+  MenuItem,
+  Paper,
+  Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
-  Checkbox,
-  IconButton,
-  Menu,
-  MenuItem,
-  Chip,
-  Stack,
   Typography,
-  Switch,
-  LinearProgress,
 } from '@mui/material'
 import {
-  MoreVertical,
-  Edit,
-  Trash2,
-  Eye,
-  Copy,
-  ClipboardList,
-  Users,
   BarChart3,
+  ClipboardList,
+  Copy,
+  Edit,
+  Eye,
+  MoreVertical,
+  Trash2,
+  Users,
 } from 'lucide-react'
+import { useState } from 'react'
 
 interface QuestionOption {
   id: string
@@ -159,8 +159,9 @@ export default function QuestionnaireTable({
     }
   }
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('fr-FR', {
+  const formatDate = (date: Date | string | undefined) => {
+    if (!date) return '—'
+    return new Date(date).toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -168,8 +169,9 @@ export default function QuestionnaireTable({
   }
 
   const getMaxScore = (questionnaire: Questionnaire) => {
-    return questionnaire.questions.reduce((total, question) => {
-      const maxOptionScore = Math.max(...question.options.map((option) => option.score))
+    return (questionnaire.questions ?? []).reduce((total, question) => {
+      const scores = (question.options ?? []).map((option) => option.score)
+      const maxOptionScore = scores.length > 0 ? Math.max(...scores) : 0
       return total + maxOptionScore
     }, 0)
   }
@@ -273,7 +275,7 @@ export default function QuestionnaireTable({
                     <TableCell>
                       <Chip
                         icon={<ClipboardList size={16} />}
-                        label={`${questionnaire.questions.length} questions`}
+                        label={`${questionnaire.questions?.length ?? 0} questions`}
                         size="small"
                         variant="outlined"
                       />

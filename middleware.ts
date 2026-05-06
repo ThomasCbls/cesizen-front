@@ -101,16 +101,16 @@ function isAuthenticated(request: NextRequest): boolean {
 }
 
 /**
- * Vérifie si l'utilisateur est administrateur
- * Note: Cette fonction nécessite d'avoir les informations utilisateur stockées
- * Pour une implémentation complète, il faudrait décoder le JWT ou stocker le rôle
+ * Vérifie si l'utilisateur est explicitement non-administrateur.
+ * Retourne false uniquement si le cookie de rôle est présent et différent de 'ADMIN'.
+ * Si le cookie est absent (session antérieure à sa mise en place), on laisse
+ * passer l'utilisateur : AdminLayout côté client fera la vérification définitive
+ * via GET /auth/profile.
  */
-function isAdmin(request: NextRequest): boolean {
-  // Pour l'instant, on peut vérifier via localStorage côté client
-  // ou décoder le JWT si le rôle y est stocké
-  // Ici on fait une vérification basique via les cookies
+function isExplicitlyNotAdmin(request: NextRequest): boolean {
   const userRole = request.cookies.get('cesizen_user_role')?.value
-  return userRole === 'ADMIN'
+  if (!userRole) return false // rôle inconnu → laisser passer
+  return userRole !== 'ADMIN'
 }
 
 /**
@@ -155,8 +155,8 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    if (!isAdmin(request)) {
-      // Rediriger vers la page d'accueil si l'utilisateur n'est pas admin
+    if (isExplicitlyNotAdmin(request)) {
+      // Rediriger vers la page d'accueil si l'utilisateur est explicitement non-admin
       return NextResponse.redirect(new URL('/home', request.url))
     }
   }
