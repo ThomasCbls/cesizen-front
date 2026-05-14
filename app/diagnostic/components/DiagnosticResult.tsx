@@ -161,23 +161,6 @@ export default function DiagnosticResult({
         </Card>
       )}
 
-      {/* Informations du diagnostic */}
-      <Card variant="outlined" className="bg-gray-50">
-        <CardContent>
-          <Box className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Calendar className="h-5 w-5 text-gray-500" />
-              <Typography variant="body2" color="textSecondary">
-                Diagnostic ID: {diagnosticId}
-              </Typography>
-            </div>
-            <Typography variant="body2" color="textSecondary">
-              {new Date().toLocaleString('fr-FR')}
-            </Typography>
-          </Box>
-        </CardContent>
-      </Card>
-
       {/* Actions */}
       <Box className="flex flex-col sm:flex-row gap-4 justify-center pt-6">
         <Button

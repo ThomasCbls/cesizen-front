@@ -7,12 +7,13 @@ import {
   Card,
   Container,
   LinearProgress,
+  Stack,
   Step,
   StepLabel,
   Stepper,
   Typography,
 } from '@mui/material'
-import { ArrowLeft, TrendingUp } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -199,13 +200,8 @@ export default function DiagnosticView() {
     <Container maxWidth="lg" className="py-6">
       {/* Header */}
       <Box className="mb-6">
-        <Button
-          startIcon={<ArrowLeft />}
-          onClick={goToHome}
-          className="mb-4 text-gray-600"
-          variant="text"
-        >
-          Retour à l&apos;accueil
+        <Button startIcon={<ArrowLeft />} onClick={goToHome} variant="text">
+          Retour à l&apos; accueil
         </Button>
 
         <Typography variant="h4" color="textPrimary">
@@ -239,13 +235,15 @@ export default function DiagnosticView() {
           sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, mb: 3, p: 2 }}
         >
           <Box className="flex items-center space-x-4">
-            <Typography variant="body2" className="text-gray-600 min-w-0">
-              Progrès: {answers.length} / {questionnaire.questions.length} questions
-            </Typography>
-            <LinearProgress variant="determinate" value={progress} className="flex-1" />
-            <Typography variant="body2" className="text-gray-600">
-              {progress}%
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ width: '100%' }}>
+              <Typography variant="body2" className="text-gray-600 min-w-0">
+                Progrès: {answers.length} / {questionnaire.questions.length} questions
+              </Typography>
+              <LinearProgress variant="determinate" value={progress} className="flex-1" />
+              <Typography variant="body2" className="text-gray-600">
+                {progress}%
+              </Typography>
+            </Stack>
           </Box>
         </Card>
       )}
@@ -257,18 +255,6 @@ export default function DiagnosticView() {
       >
         {renderContent()}
       </Card>
-
-      {/* Actions supplémentaires pour la page résultat */}
-      {currentStep === 'result' && (
-        <Box className="mt-6 text-center space-x-4">
-          <Button variant="outlined" onClick={handleNewDiagnostic} className="mr-4">
-            Nouveau Diagnostic
-          </Button>
-          <Button variant="contained" onClick={goToHistory} startIcon={<TrendingUp />}>
-            Voir l&apos;Historique
-          </Button>
-        </Box>
-      )}
     </Container>
   )
 }

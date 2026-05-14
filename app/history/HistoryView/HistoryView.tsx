@@ -11,6 +11,7 @@ import {
   Chip,
   Container,
   IconButton,
+  Stack,
   Tooltip,
   Typography,
 } from '@mui/material'
@@ -166,13 +167,8 @@ export default function HistoryView() {
       <Container maxWidth="lg" className="py-6">
         {/* Header */}
         <Box className="mb-6">
-          <Button
-            startIcon={<ArrowLeft />}
-            onClick={goToHome}
-            className="mb-4 text-gray-600"
-            variant="text"
-          >
-            Retour à l&apos;accueil
+          <Button startIcon={<ArrowLeft />} onClick={goToHome} variant="text">
+            Retour à l&apos; accueil
           </Button>
 
           <Box className="flex flex-col md:flex-row md:items-center md:justify-between">
@@ -185,7 +181,7 @@ export default function HistoryView() {
               </Typography>
             </div>
 
-            <div className="flex space-x-2 mt-4 md:mt-0">
+            <Stack direction="row" spacing={2}>
               <Button startIcon={<RefreshCcw />} onClick={loadHistoryData} variant="outlined">
                 Actualiser
               </Button>
@@ -197,7 +193,7 @@ export default function HistoryView() {
               >
                 Nouveau Diagnostic
               </Button>
-            </div>
+            </Stack>
           </Box>
         </Box>
 
