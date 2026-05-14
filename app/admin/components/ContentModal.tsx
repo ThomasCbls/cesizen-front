@@ -1,66 +1,36 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { type AdminContent } from '@/lib/services'
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Switch,
-  FormControlLabel,
   Alert,
   Box,
-  Typography,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
   IconButton,
-  Chip,
+  InputLabel,
+  MenuItem,
   Paper,
-  Tabs,
+  Select,
+  Stack,
+  Switch,
   Tab,
+  Tabs,
+  TextField,
+  Typography,
 } from '@mui/material'
-import {
-  X,
-  Save,
-  FileText,
-  Eye,
-  Code,
-  Bold,
-  Italic,
-  List,
-  Link,
-  Image as ImageIcon,
-} from 'lucide-react'
-
-interface Content {
-  id?: string
-  title: string
-  slug: string
-  type: 'page' | 'article' | 'menu'
-  status: 'draft' | 'published' | 'archived'
-  isActive: boolean
-  author?: {
-    prenom: string
-    nom: string
-  }
-  createdAt?: Date
-  updatedAt?: Date
-  publishedAt?: Date
-  excerpt?: string
-  content: string
-  order?: number
-}
+import { Bold, FileText, Italic, Link, List, Save, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface ContentModalProps {
   open: boolean
   onClose: () => void
-  onSave: (content: Content) => Promise<void> | void
-  content?: Content | null
+  onSave: (content: Partial<AdminContent>) => Promise<void> | void
+  content?: AdminContent | null
   loading?: boolean
 }
 
@@ -72,7 +42,7 @@ export default function ContentModal({
   loading = false,
 }: ContentModalProps) {
   const [activeTab, setActiveTab] = useState(0)
-  const [formData, setFormData] = useState<Content>({
+  const [formData, setFormData] = useState<Partial<AdminContent>>({
     title: '',
     slug: '',
     type: 'article',
@@ -120,23 +90,23 @@ export default function ContentModal({
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.title.trim()) {
+    if (!formData?.title?.trim()) {
       newErrors.title = 'Le titre est requis'
-    } else if (formData.title.trim().length < 3) {
+    } else if (formData?.title?.trim().length < 3) {
       newErrors.title = 'Le titre doit contenir au moins 3 caractères'
     }
 
-    if (!formData.slug.trim()) {
+    if (!formData?.slug?.trim()) {
       newErrors.slug = 'Le slug est requis'
-    } else if (!/^[a-z0-9-]+$/.test(formData.slug)) {
+    } else if (!/^[a-z0-9-]+$/.test(formData?.slug)) {
       newErrors.slug = 'Le slug ne peut contenir que des lettres minuscules, chiffres et tirets'
     }
 
-    if (!formData.content.trim()) {
+    if (!formData?.content?.trim()) {
       newErrors.content = 'Le contenu est requis'
     }
 
-    if (formData.excerpt && formData.excerpt.length > 200) {
+    if (formData?.excerpt && formData?.excerpt.length > 200) {
       newErrors.excerpt = "L'extrait ne peut pas dépasser 200 caractères"
     }
 
@@ -149,16 +119,16 @@ export default function ContentModal({
 
     const contentData = {
       ...formData,
-      title: formData.title.trim(),
-      slug: formData.slug.trim(),
-      content: formData.content.trim(),
-      excerpt: formData.excerpt?.trim() || undefined,
+      title: formData?.title?.trim(),
+      slug: formData?.slug?.trim(),
+      content: formData?.content?.trim(),
+      excerpt: formData?.excerpt?.trim() || undefined,
     }
 
     onSave(contentData)
   }
 
-  const handleInputChange = (field: keyof Content, value: string | boolean | number) => {
+  const handleInputChange = (field: keyof AdminContent, value: string | boolean | number) => {
     setFormData((prev) => {
       const newData = { ...prev, [field]: value }
 
@@ -183,34 +153,34 @@ export default function ContentModal({
 
     const start = textarea.selectionStart
     const end = textarea.selectionEnd
-    const selectedText = formData.content.substring(start, end)
+    const selectedText = formData?.content?.substring(start, end) || ''
 
     let newContent = formData.content
 
     switch (tag) {
       case 'bold':
         newContent =
-          formData.content.substring(0, start) +
+          formData?.content?.substring(0, start) +
           `**${selectedText || 'texte en gras'}**` +
-          formData.content.substring(end)
+          formData?.content?.substring(end)
         break
       case 'italic':
         newContent =
-          formData.content.substring(0, start) +
+          formData?.content?.substring(0, start) +
           `*${selectedText || 'texte en italique'}*` +
-          formData.content.substring(end)
+          formData?.content?.substring(end)
         break
       case 'list':
         newContent =
-          formData.content.substring(0, start) +
+          formData?.content?.substring(0, start) +
           `\n- Élément de liste\n` +
-          formData.content.substring(end)
+          formData?.content?.substring(end)
         break
       case 'link':
         newContent =
-          formData.content.substring(0, start) +
+          formData?.content?.substring(0, start) +
           `[${selectedText || 'texte du lien'}](http://exemple.com)` +
-          formData.content.substring(end)
+          formData?.content?.substring(end)
         break
     }
 
@@ -442,7 +412,7 @@ export default function ContentModal({
                     '& em': { fontStyle: 'italic' },
                   }}
                   dangerouslySetInnerHTML={{
-                    __html: formData.content
+                    __html: (formData?.content || '')
                       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                       .replace(/\*(.*?)\*/g, '<em>$1</em>')
                       .replace(/^- (.*)$/gm, '• $1')

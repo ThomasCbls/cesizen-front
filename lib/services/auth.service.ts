@@ -1,6 +1,13 @@
 // 🔐 SERVICE AUTHENTIFICATION - CESIZen
 
-import type { LoginRequest, LoginResponse, RefreshTokenResponse, User } from '@/types'
+import type {
+  LoginRequest,
+  LoginResponse,
+  RefreshTokenResponse,
+  RegisterRequest,
+  RegisterResponse,
+  User,
+} from '@/types'
 import { apiClient } from '../api-client-v2'
 
 /**
@@ -23,6 +30,14 @@ export class AuthService {
    */
   static async login(credentials: LoginRequest): Promise<LoginResponse> {
     const response = await apiClient.postPublic<LoginResponse>('/auth/login', credentials)
+    return { ...response, user: this.normalizeUser(response.user) }
+  }
+
+  /**
+   * Inscription utilisateur
+   */
+  static async register(userData: RegisterRequest): Promise<RegisterResponse> {
+    const response = await apiClient.postPublic<RegisterResponse>('/auth/register', userData)
     return { ...response, user: this.normalizeUser(response.user) }
   }
 

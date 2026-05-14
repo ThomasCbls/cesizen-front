@@ -1,67 +1,37 @@
 'use client'
 
-import { useState } from 'react'
+import { type AdminContent } from '@/lib/services'
 import {
+  Avatar,
+  Box,
+  Checkbox,
+  Chip,
+  IconButton,
+  Menu,
+  MenuItem,
+  Paper,
+  Stack,
+  Switch,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
-  TableRow,
   TablePagination,
-  Paper,
-  Checkbox,
-  IconButton,
-  Menu,
-  MenuItem,
-  Chip,
-  Stack,
+  TableRow,
   Typography,
-  Box,
-  Switch,
-  Tooltip,
-  Avatar,
 } from '@mui/material'
-import {
-  MoreVertical,
-  Edit,
-  Trash2,
-  Eye,
-  Copy,
-  ToggleLeft,
-  ToggleRight,
-  FileText,
-  Calendar,
-  User,
-} from 'lucide-react'
-
-interface Content {
-  id?: string
-  title: string
-  slug: string
-  type: 'page' | 'article' | 'menu'
-  status: 'draft' | 'published' | 'archived'
-  isActive: boolean
-  author?: {
-    prenom: string
-    nom: string
-  }
-  createdAt?: Date
-  updatedAt?: Date
-  publishedAt?: Date
-  excerpt?: string
-  content: string
-  order?: number
-}
+import { Copy, Edit, Eye, FileText, MoreVertical, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 
 interface ContentTableProps {
-  contents: Content[]
+  contents: AdminContent[]
   loading?: boolean
   onToggleActive: (contentId: string, isActive: boolean) => void
-  onEdit: (content: Content) => void
-  onDelete: (content: Content) => void
-  onDuplicate: (content: Content) => void
-  onPreview: (content: Content) => void
+  onEdit: (content: AdminContent) => void
+  onDelete: (content: AdminContent) => void
+  onDuplicate: (content: AdminContent) => void
+  onPreview: (content: AdminContent) => void
 }
 
 export default function ContentTable({
@@ -77,7 +47,7 @@ export default function ContentTable({
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [currentContent, setCurrentContent] = useState<Content | null>(null)
+  const [currentContent, setCurrentContent] = useState<AdminContent | null>(null)
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
@@ -100,7 +70,7 @@ export default function ContentTable({
     setSelected(newSelected)
   }
 
-  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, content: Content) => {
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, content: AdminContent) => {
     setAnchorEl(event.currentTarget)
     setCurrentContent(content)
   }
@@ -130,7 +100,7 @@ export default function ContentTable({
     handleMenuClose()
   }
 
-  const getStatusColor = (status: Content['status']) => {
+  const getStatusColor = (status: AdminContent['status']) => {
     switch (status) {
       case 'published':
         return 'success'
@@ -143,7 +113,7 @@ export default function ContentTable({
     }
   }
 
-  const getStatusLabel = (status: Content['status']) => {
+  const getStatusLabel = (status: AdminContent['status']) => {
     switch (status) {
       case 'published':
         return 'Publié'
@@ -156,7 +126,7 @@ export default function ContentTable({
     }
   }
 
-  const getTypeColor = (type: Content['type']) => {
+  const getTypeColor = (type: AdminContent['type']) => {
     switch (type) {
       case 'page':
         return 'primary'
@@ -169,7 +139,7 @@ export default function ContentTable({
     }
   }
 
-  const getTypeLabel = (type: Content['type']) => {
+  const getTypeLabel = (type: AdminContent['type']) => {
     switch (type) {
       case 'page':
         return 'Page'

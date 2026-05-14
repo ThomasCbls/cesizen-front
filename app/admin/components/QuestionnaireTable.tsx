@@ -1,5 +1,6 @@
 'use client'
 
+import { type AdminQuestionnaire } from '@/lib/services'
 import {
   Checkbox,
   Chip,
@@ -30,28 +31,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 
-interface QuestionOption {
-  id: string
-  text: string
-  score: number
-}
-
-interface Question {
-  id: string
-  text: string
-  order: number
-  options: QuestionOption[]
-}
-
-interface Questionnaire {
-  id?: string
-  title: string
-  description: string
-  category: 'STRESS' | 'ANXIETY' | 'BURNOUT'
-  isActive: boolean
-  questions: Question[]
-  createdAt?: Date
-  updatedAt?: Date
+type Questionnaire = AdminQuestionnaire & {
   stats?: {
     totalResponses: number
     avgScore: number

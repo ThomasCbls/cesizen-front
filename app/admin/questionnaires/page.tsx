@@ -146,21 +146,21 @@ export default function QuestionnaireManagement() {
     }
   }
 
-  const handleSaveQuestionnaire = async (questionnaireData: Questionnaire) => {
+  const handleSaveQuestionnaire = async (questionnaireData: Partial<Questionnaire>) => {
     try {
       setQuestionnaireModal((prev) => ({ ...prev, loading: true }))
 
       if (questionnaireData.id) {
         const updated = await adminService.updateQuestionnaire(
           questionnaireData.id,
-          questionnaireData,
+          questionnaireData as Questionnaire,
         )
         setQuestionnaires((prev) =>
           prev.map((q) => (q.id === questionnaireData.id ? { ...q, ...updated } : q)),
         )
         showSnackbar('Questionnaire modifié avec succès', 'success')
       } else {
-        const created = await adminService.createQuestionnaire(questionnaireData)
+        const created = await adminService.createQuestionnaire(questionnaireData as Questionnaire)
         setQuestionnaires((prev) => [...prev, created])
         showSnackbar('Questionnaire créé avec succès', 'success')
       }

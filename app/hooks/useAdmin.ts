@@ -1,12 +1,12 @@
-import { useState, useCallback } from 'react'
 import {
+  AdminActivity,
+  AdminContent,
+  AdminDashboardStats,
+  AdminQuestionnaire,
   adminService,
   AdminUser,
-  AdminContent,
-  AdminQuestionnaire,
-  AdminDashboardStats,
-  AdminActivity,
 } from '@/lib/services/admin.service'
+import { useCallback, useState } from 'react'
 
 // Hook générique pour les opérations async
 export function useAsync<T>(asyncFunction: () => Promise<T>) {
@@ -77,11 +77,11 @@ export function useAdminUsers() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const loadUsers = useCallback(async (params?: Parameters<typeof adminService.getUsers>[0]) => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
-      const result = await adminService.getUsers(params)
+      const result = await adminService.getUsers()
       setUsers(result.users)
       setTotal(result.total)
     } catch (err) {
@@ -93,14 +93,11 @@ export function useAdminUsers() {
     }
   }, [])
 
-  const createUser = useCallback(
-    async (userData: Parameters<typeof adminService.createUser>[0]) => {
-      const newUser = await adminService.createUser(userData)
-      setUsers((prev) => [...prev, newUser])
-      return newUser
-    },
-    [],
-  )
+  const createUser = useCallback(async (userData: Partial<AdminUser>) => {
+    const newUser = await adminService.createUser(userData)
+    setUsers((prev) => [...prev, newUser])
+    return newUser
+  }, [])
 
   const updateUser = useCallback(async (userId: string, userData: Partial<AdminUser>) => {
     const updatedUser = await adminService.updateUser(userId, userData)

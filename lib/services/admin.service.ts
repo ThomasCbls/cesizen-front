@@ -53,8 +53,8 @@ export interface AdminContent {
   id: string
   title: string
   slug: string
-  type: string
-  status: string
+  type: 'page' | 'article' | 'menu'
+  status: 'draft' | 'published' | 'archived'
   isActive: boolean
   author?: { prenom: string; nom: string }
   excerpt?: string
@@ -69,12 +69,17 @@ export interface AdminQuestionnaire {
   id: string
   title: string
   description: string
-  category: string
+  category: 'STRESS' | 'ANXIETY' | 'BURNOUT'
   isActive: boolean
   questions: AdminQuestion[]
   createdAt: Date
   updatedAt: Date
   createur_id?: string
+  stats?: {
+    totalResponses: number
+    avgScore: number
+    lastResponseAt?: Date
+  }
 }
 
 export interface AdminQuestion {
@@ -92,6 +97,17 @@ export interface AdminQuestionOption {
 
 export interface AdminDashboardStats {
   [key: string]: unknown
+}
+
+export interface AdminActivity {
+  id: string
+  type: 'user_registration' | 'diagnostic_completed' | 'content_created' | 'questionnaire_updated'
+  description: string
+  timestamp: Date
+  user?: {
+    prenom: string
+    nom: string
+  }
 }
 
 // ============================================================
@@ -115,7 +131,7 @@ function mapInformation(api: ApiInformation): AdminContent {
     id: String(api.id_information),
     title: api.titre,
     slug: api.slug ?? '',
-    type: api.type_contenu,
+    type: api.type_contenu as 'page' | 'article' | 'menu',
     status: api.est_actif ? 'published' : 'archived',
     isActive: api.est_actif,
     content: api.contenu,
@@ -130,6 +146,14 @@ class AdminService {
   // === DASHBOARD ===
   async getDashboardStats(): Promise<AdminDashboardStats> {
     return apiClient.get<AdminDashboardStats>('/admin/dashboard')
+  }
+
+  async getRecentActivity(limit = 10): Promise<AdminActivity[]> {
+    try {
+      return apiClient.get<AdminActivity[]>(`/admin/activity?limit=${limit}`)
+    } catch {
+      return []
+    }
   }
 
   // === UTILISATEURS ===
@@ -172,6 +196,30 @@ class AdminService {
 
   async deleteUser(userId: string): Promise<void> {
     return apiClient.delete(`/admin/utilisateurs/${userId}`)
+  }
+
+  async createUser(userData: Partial<AdminUser>): Promise<AdminUser> {
+    const body = {
+      email: userData.email,
+      prenom: userData.prenom,
+      nom: userData.nom,
+      role: userData.role?.toLowerCase(),
+      est_actif: userData.isActive ?? true,
+    }
+    const data = await apiClient.post<ApiUtilisateur>('/admin/utilisateurs', body)
+    return mapUtilisateur(data)
+  }
+
+  async updateUser(userId: string, userData: Partial<AdminUser>): Promise<AdminUser> {
+    const body = {
+      email: userData.email,
+      prenom: userData.prenom,
+      nom: userData.nom,
+      role: userData.role?.toLowerCase(),
+      est_actif: userData.isActive,
+    }
+    const data = await apiClient.patch<ApiUtilisateur>(`/admin/utilisateurs/${userId}`, body)
+    return mapUtilisateur(data)
   }
 
   async bulkUpdateUsers(
@@ -272,6 +320,40 @@ class AdminService {
     return apiClient.delete(`/admin/informations/${contentId}`)
   }
 
+  async duplicateContent(contentId: string): Promise<AdminContent> {
+    const original = await apiClient.get<ApiInformation>(`/admin/informations/${contentId}`)
+    const body = {
+      titre: `${original.titre} (Copie)`,
+      contenu: original.contenu,
+      type_contenu: original.type_contenu,
+      slug: original.slug ? `${original.slug}-copie` : undefined,
+      est_actif: false,
+      ordre_affichage: original.ordre_affichage,
+    }
+    const data = await apiClient.post<ApiInformation>('/admin/informations', body)
+    return mapInformation(data)
+  }
+
+  async reorderContent(contentId: string, newOrder: number): Promise<void> {
+    await apiClient.patch(`/admin/informations/${contentId}`, { ordre_affichage: newOrder })
+  }
+
+  async bulkUpdateContents(
+    contentIds: string[],
+    action: 'publish' | 'draft' | 'activate' | 'deactivate' | 'delete',
+  ): Promise<void> {
+    await Promise.all(
+      contentIds.map((id) => {
+        if (action === 'delete') return this.deleteContent(id)
+        if (action === 'activate') return this.toggleContentActive(id, true)
+        if (action === 'deactivate') return this.toggleContentActive(id, false)
+        if (action === 'publish') return this.updateContent(id, { status: 'published' })
+        if (action === 'draft') return this.updateContent(id, { status: 'draft' })
+        return Promise.resolve()
+      }),
+    )
+  }
+
   // === QUESTIONNAIRES ===
   async getQuestionnaires(): Promise<AdminQuestionnaire[]> {
     const data = await apiClient.get<
@@ -323,6 +405,44 @@ class AdminService {
     isActive: boolean,
   ): Promise<AdminQuestionnaire> {
     return apiClient.put<AdminQuestionnaire>(`/questionnaires/${questionnaireId}`, { isActive })
+  }
+
+  async duplicateQuestionnaire(questionnaireId: string): Promise<AdminQuestionnaire> {
+    const original = await this.getQuestionnaireWithQuestions(questionnaireId)
+    return this.createQuestionnaire({
+      title: `${original.title} (Copie)`,
+      description: original.description,
+      category: original.category,
+      isActive: false,
+      questions: original.questions,
+    })
+  }
+
+  async checkSlugAvailability(
+    slug: string,
+    type: string,
+    excludeId?: string,
+  ): Promise<{ available: boolean }> {
+    const query = excludeId ? `?excludeId=${excludeId}` : ''
+    try {
+      await apiClient.getPublic(`/informations/slug/${slug}${query}`)
+      return { available: false }
+    } catch {
+      return { available: true }
+    }
+  }
+
+  async uploadImage(file: File): Promise<{ url: string }> {
+    const formData = new FormData()
+    formData.append('file', file)
+    return apiClient.post<{ url: string }>('/admin/upload', formData)
+  }
+
+  async exportData(
+    type: 'users' | 'contents' | 'questionnaires' | 'responses',
+    format: 'csv' | 'json' = 'csv',
+  ): Promise<Blob> {
+    return apiClient.get<Blob>(`/admin/export/${type}?format=${format}`)
   }
 }
 

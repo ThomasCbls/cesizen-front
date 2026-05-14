@@ -1,65 +1,53 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Switch,
-  FormControlLabel,
+  type AdminQuestion,
+  type AdminQuestionnaire,
+  type AdminQuestionOption,
+} from '@/lib/services'
+import {
   Alert,
   Box,
-  Typography,
-  IconButton,
+  Button,
   Card,
   CardContent,
-  Collapse,
   Chip,
+  Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
 } from '@mui/material'
-import { X, Save, ClipboardList, Plus, Minus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, ClipboardList, Minus, Plus, Save, Trash2, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
-interface QuestionOption {
-  id: string
-  text: string
-  score: number
-}
+type Question = AdminQuestion
+type QuestionOption = AdminQuestionOption
 
-interface Question {
-  id: string
-  text: string
-  order: number
-  options: QuestionOption[]
-}
-
-interface Questionnaire {
+interface QuestionnaireForm {
   id?: string
   title: string
   description: string
   category: 'STRESS' | 'ANXIETY' | 'BURNOUT'
   isActive: boolean
   questions: Question[]
-  createdAt?: Date
-  updatedAt?: Date
-  stats?: {
-    totalResponses: number
-    avgScore: number
-    lastResponseAt?: Date
-  }
 }
 
 interface QuestionnaireModalProps {
   open: boolean
   onClose: () => void
-  onSave: (questionnaire: Questionnaire) => Promise<void> | void
-  questionnaire?: Questionnaire | null
+  onSave: (questionnaire: Partial<AdminQuestionnaire>) => Promise<void> | void
+  questionnaire?: AdminQuestionnaire | null
   loading?: boolean
 }
 
@@ -70,7 +58,7 @@ export default function QuestionnaireModal({
   questionnaire,
   loading = false,
 }: QuestionnaireModalProps) {
-  const [formData, setFormData] = useState<Questionnaire>({
+  const [formData, setFormData] = useState<QuestionnaireForm>({
     title: '',
     description: '',
     category: 'STRESS',
@@ -151,7 +139,7 @@ export default function QuestionnaireModal({
     onSave(formData)
   }
 
-  const handleInputChange = (field: keyof Questionnaire, value: unknown) => {
+  const handleInputChange = (field: keyof QuestionnaireForm, value: unknown) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: '' }))

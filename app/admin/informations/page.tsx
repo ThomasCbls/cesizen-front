@@ -173,12 +173,12 @@ export default function ContentManagement() {
     }
   }
 
-  const handleSaveContent = async (contentData: Content) => {
+  const handleSaveContent = async (contentData: Partial<Content>) => {
     try {
       setContentModal((prev) => ({ ...prev, loading: true }))
 
       if (contentData.id) {
-        const updated = await adminService.updateContent(contentData.id, contentData)
+        const updated = await adminService.updateContent(contentData.id, contentData as Content)
         setContents((prev) =>
           prev.map((content) =>
             content.id === contentData.id ? { ...content, ...updated } : content,
@@ -186,7 +186,7 @@ export default function ContentManagement() {
         )
         showSnackbar('Contenu modifié avec succès', 'success')
       } else {
-        const created = await adminService.createContent(contentData)
+        const created = await adminService.createContent(contentData as Content)
         setContents((prev) => [...prev, created])
         showSnackbar('Contenu créé avec succès', 'success')
       }

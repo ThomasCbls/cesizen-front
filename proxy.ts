@@ -116,7 +116,7 @@ function isExplicitlyNotAdmin(request: NextRequest): boolean {
 /**
  * Applique le contrôle d'accès
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Ignorer les ressources statiques
