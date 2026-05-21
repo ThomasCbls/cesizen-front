@@ -316,8 +316,8 @@ export default function QuestionnaireModal({
         </Stack>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 2, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <Stack spacing={3} sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <DialogContent sx={{ pt: 2, overflow: 'auto' }}>
+        <Stack spacing={3}>
           {/* Informations générales */}
           <Card elevation={0} sx={{ border: '1px solid', borderColor: 'divider' }}>
             <CardContent>
