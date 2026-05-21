@@ -136,7 +136,21 @@ export default function QuestionnaireModal({
 
   const handleSubmit = () => {
     if (!validateForm()) return
-    onSave(formData)
+
+    // Nettoyer les données: enlever les IDs temporaires du frontend
+    const cleanedData = {
+      ...(formData.id && { id: formData.id }),
+      title: formData.title,
+      description: formData.description,
+      category: formData.category,
+      isActive: formData.isActive,
+      questions: formData.questions.map(({ id, ...question }) => ({
+        ...question,
+        options: question.options.map(({ id, ...option }) => option),
+      })),
+    }
+
+    onSave(cleanedData)
   }
 
   const handleInputChange = (field: keyof QuestionnaireForm, value: unknown) => {
@@ -150,7 +164,7 @@ export default function QuestionnaireModal({
     const newQuestion: Question = {
       id: `q_${Date.now()}`,
       text: '',
-      order: formData.questions.length,
+      order: formData.questions.length + 1,
       options: [
         { id: `o_${Date.now()}_1`, text: '', score: 0 },
         { id: `o_${Date.now()}_2`, text: '', score: 1 },
@@ -267,7 +281,7 @@ export default function QuestionnaireModal({
 
       // Mettre à jour les ordres
       newQuestions.forEach((q, index) => {
-        q.order = index
+        q.order = index + 1
       })
 
       setFormData((prev) => ({ ...prev, questions: newQuestions }))

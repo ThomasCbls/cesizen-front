@@ -151,20 +151,18 @@ export default function QuestionnaireManagement() {
       setQuestionnaireModal((prev) => ({ ...prev, loading: true }))
 
       if (questionnaireData.id) {
-        const updated = await adminService.updateQuestionnaire(
+        await adminService.updateQuestionnaire(
           questionnaireData.id,
           questionnaireData as Questionnaire,
         )
-        setQuestionnaires((prev) =>
-          prev.map((q) => (q.id === questionnaireData.id ? { ...q, ...updated } : q)),
-        )
         showSnackbar('Questionnaire modifié avec succès', 'success')
       } else {
-        const created = await adminService.createQuestionnaire(questionnaireData as Questionnaire)
-        setQuestionnaires((prev) => [...prev, created])
+        await adminService.createQuestionnaire(questionnaireData as Questionnaire)
         showSnackbar('Questionnaire créé avec succès', 'success')
       }
 
+      // Rafraîchir la liste pour s'assurer que les données sont à jour
+      await loadQuestionnaires()
       setQuestionnaireModal({ open: false, questionnaire: null, loading: false })
     } catch {
       showSnackbar('Erreur lors de la sauvegarde', 'error')

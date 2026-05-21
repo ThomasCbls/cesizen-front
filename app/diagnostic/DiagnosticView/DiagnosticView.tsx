@@ -5,6 +5,8 @@ import {
   Box,
   Button,
   Card,
+  CardActionArea,
+  Chip,
   Container,
   LinearProgress,
   Stack,
@@ -13,7 +15,7 @@ import {
   Stepper,
   Typography,
 } from '@mui/material'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, BrainCircuit, ClipboardList } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -29,15 +31,30 @@ import LoadingSpinner from '../components/LoadingSpinner'
 import QuestionnaireForm from '../components/QuestionnaireForm'
 
 // États du diagnostic
-type DiagnosticStep = 'loading' | 'questionnaire' | 'submitting' | 'result' | 'error'
+type DiagnosticStep = 'loading' | 'selection' | 'questionnaire' | 'submitting' | 'result' | 'error'
 
-const STEPS = ['Questionnaire', 'Soumission', 'Résultat']
+const STEPS = ['Sélection', 'Questionnaire', 'Résultat']
+
+const CATEGORY_LABELS: Record<string, string> = {
+  STRESS: 'Stress',
+  ANXIETY: 'Anxiété',
+  BURNOUT: 'Burnout',
+}
+
+const CATEGORY_COLORS: Record<string, 'warning' | 'error' | 'secondary' | 'default'> = {
+  STRESS: 'warning',
+  ANXIETY: 'error',
+  BURNOUT: 'secondary',
+}
 
 export default function DiagnosticView() {
   const router = useRouter()
 
   // État du composant
   const [currentStep, setCurrentStep] = useState<DiagnosticStep>('loading')
+  const [availableQuestionnaires, setAvailableQuestionnaires] = useState<
+    Omit<Questionnaire, 'questions'>[]
+  >([])
   const [questionnaire, setQuestionnaire] = useState<Questionnaire | null>(null)
   const [answers, setAnswers] = useState<DiagnosticSubmissionAnswer[]>([])
   const [result, setResult] = useState<DiagnosticResultType | null>(null)
@@ -46,24 +63,37 @@ export default function DiagnosticView() {
   const [progress, setProgress] = useState<number>(0)
 
   useEffect(() => {
-    loadQuestionnaire()
+    loadAvailableQuestionnaires()
   }, [])
 
-  const loadQuestionnaire = async () => {
+  const loadAvailableQuestionnaires = async () => {
     try {
       setCurrentStep('loading')
       setError(null)
 
-      const questionnaireData = await QuestionnaireService.getMainStressQuestionnaire()
-      setQuestionnaire(questionnaireData)
+      const response = await QuestionnaireService.getQuestionnaires({ limit: 50 })
+      setAvailableQuestionnaires(response.questionnaires)
+      setCurrentStep('selection')
+    } catch (error: unknown) {
+      console.error('Erreur chargement questionnaires:', error)
+      setError('Impossible de charger les questionnaires. Veuillez réessayer.')
+      setCurrentStep('error')
+    }
+  }
+
+  const handleSelectQuestionnaire = async (id: string) => {
+    try {
+      setCurrentStep('loading')
+      setError(null)
+
+      const response = await QuestionnaireService.getQuestionnaireById(id)
+      setQuestionnaire(response.questionnaire)
+      setAnswers([])
+      setProgress(0)
       setCurrentStep('questionnaire')
     } catch (error: unknown) {
       console.error('Erreur chargement questionnaire:', error)
-      setError(
-        error && typeof error === 'object' && 'error' in error
-          ? (error as { error?: { message?: string } }).error?.message || 'Erreur de serveur'
-          : 'Impossible de charger le questionnaire. Veuillez réessayer.',
-      )
+      setError('Impossible de charger le questionnaire. Veuillez réessayer.')
       setCurrentStep('error')
     }
   }
@@ -116,7 +146,7 @@ export default function DiagnosticView() {
 
   const handleRetry = () => {
     setError(null)
-    loadQuestionnaire()
+    loadAvailableQuestionnaires()
   }
 
   const handleNewDiagnostic = () => {
@@ -124,7 +154,8 @@ export default function DiagnosticView() {
     setResult(null)
     setDiagnosticId(null)
     setProgress(0)
-    setCurrentStep('questionnaire')
+    setQuestionnaire(null)
+    setCurrentStep('selection')
   }
 
   const goToHistory = () => {
@@ -138,18 +169,126 @@ export default function DiagnosticView() {
   const renderContent = () => {
     switch (currentStep) {
       case 'loading':
-        return <LoadingSpinner message="Chargement du questionnaire..." />
+        return <LoadingSpinner message="Chargement..." />
+
+      case 'selection':
+        return (
+          <Stack spacing={3}>
+            <Box>
+              <Typography variant="h6" fontWeight={600} gutterBottom>
+                Choisissez un questionnaire
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Sélectionnez le diagnostic que vous souhaitez réaliser.
+              </Typography>
+            </Box>
+            {availableQuestionnaires.length === 0 ? (
+              <Alert severity="info">Aucun questionnaire disponible pour le moment.</Alert>
+            ) : (
+              <Box
+                display="grid"
+                gridTemplateColumns="repeat(auto-fill, minmax(280px, 1fr))"
+                gap={2}
+              >
+                {availableQuestionnaires.map((q) => (
+                  <Card
+                    key={q.id}
+                    elevation={0}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      transition: '0.2s',
+                      '&:hover': {
+                        borderColor: 'primary.main',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+                        transform: 'translateY(-2px)',
+                      },
+                    }}
+                  >
+                    <CardActionArea
+                      onClick={() => handleSelectQuestionnaire(q.id)}
+                      sx={{
+                        p: 2.5,
+                        height: '100%',
+                        alignItems: 'flex-start',
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}
+                    >
+                      <Stack spacing={1.5} sx={{ width: '100%' }}>
+                        <Stack direction="row" alignItems="center" spacing={1}>
+                          <Box
+                            sx={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: 36,
+                              height: 36,
+                              borderRadius: 1.5,
+                              bgcolor: 'primary.lighter',
+                              color: 'primary.main',
+                              flexShrink: 0,
+                            }}
+                          >
+                            <ClipboardList size={18} />
+                          </Box>
+                          <Chip
+                            label={CATEGORY_LABELS[q.category] ?? q.category}
+                            color={CATEGORY_COLORS[q.category] ?? 'default'}
+                            size="small"
+                            variant="outlined"
+                          />
+                        </Stack>
+                        <Typography variant="subtitle1" fontWeight={600} lineHeight={1.3}>
+                          {q.title}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                          }}
+                        >
+                          {q.description}
+                        </Typography>
+                      </Stack>
+                    </CardActionArea>
+                  </Card>
+                ))}
+              </Box>
+            )}
+          </Stack>
+        )
 
       case 'questionnaire':
         return (
-          <QuestionnaireForm
-            questionnaire={questionnaire!}
-            answers={answers}
-            progress={progress}
-            onAnswerChange={handleAnswerChange}
-            onSubmit={handleSubmitDiagnostic}
-            disabled={false}
-          />
+          <Stack spacing={2}>
+            <Button
+              startIcon={<ArrowLeft size={16} />}
+              onClick={() => {
+                setCurrentStep('selection')
+                setQuestionnaire(null)
+                setAnswers([])
+                setProgress(0)
+              }}
+              variant="text"
+              sx={{ alignSelf: 'flex-start' }}
+            >
+              Changer de questionnaire
+            </Button>
+            <QuestionnaireForm
+              questionnaire={questionnaire!}
+              answers={answers}
+              progress={progress}
+              onAnswerChange={handleAnswerChange}
+              onSubmit={handleSubmitDiagnostic}
+              disabled={false}
+            />
+          </Stack>
         )
 
       case 'submitting':
@@ -185,8 +324,9 @@ export default function DiagnosticView() {
   const getActiveStep = (): number => {
     switch (currentStep) {
       case 'loading':
-      case 'questionnaire':
+      case 'selection':
         return 0
+      case 'questionnaire':
       case 'submitting':
         return 1
       case 'result':
@@ -201,15 +341,24 @@ export default function DiagnosticView() {
       {/* Header */}
       <Box className="mb-6">
         <Button startIcon={<ArrowLeft />} onClick={goToHome} variant="text">
-          Retour à l&apos; accueil
+          Retour à l&apos;accueil
         </Button>
 
-        <Typography variant="h4" color="textPrimary">
-          Diagnostic de Stress
-        </Typography>
-        <Typography variant="body1" color="textSecondary">
-          Évaluez votre niveau de stress avec notre questionnaire scientifique
-        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mt: 1 }}>
+          <BrainCircuit size={28} />
+          <Box>
+            <Typography variant="h4" color="textPrimary">
+              Diagnostic
+            </Typography>
+            <Typography variant="body1" color="textSecondary">
+              {currentStep === 'selection'
+                ? 'Choisissez le questionnaire que vous souhaitez réaliser'
+                : questionnaire
+                  ? questionnaire.title
+                  : 'Évaluez votre bien-être'}
+            </Typography>
+          </Box>
+        </Stack>
       </Box>
 
       {/* Stepper - seulement si pas en erreur */}

@@ -12,6 +12,9 @@ import {
   CardContent,
   Chip,
   Container,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Divider,
   IconButton,
   ListItemIcon,
@@ -40,10 +43,20 @@ const HomePage = () => {
   const { user, logout, isLoading } = useRequireAuth()
   const [articles, setArticles] = useState<AdminContent[]>([])
   const [articlesLoading, setArticlesLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
+  const [selectedArticle, setSelectedArticle] = useState<AdminContent | null>(null)
+  const [articleModalOpen, setArticleModalOpen] = useState(false)
   const theme = useTheme()
   const router = useRouter()
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null)
   const open = Boolean(anchorEl)
+
+  // Marquer que le composant est monté côté client
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 0)
+    return () => clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     adminService
@@ -76,8 +89,18 @@ const HomePage = () => {
     router.push('/user-setting')
   }
 
-  // Affichage de chargement
-  if (isLoading) {
+  const handleArticleClick = (article: AdminContent) => {
+    setSelectedArticle(article)
+    setArticleModalOpen(true)
+  }
+
+  const handleCloseArticleModal = () => {
+    setArticleModalOpen(false)
+    setSelectedArticle(null)
+  }
+
+  // Affichage de chargement ou protection hydratation
+  if (!mounted || isLoading) {
     return (
       <Box
         sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -176,10 +199,11 @@ const HomePage = () => {
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        {user && (
-          <>
-            {user.role === 'ADMIN' && (
+        {user &&
+          [
+            user.role === 'ADMIN' && (
               <MenuItem
+                key="admin"
                 onClick={() => {
                   handleClose()
                   router.push('/admin/dashboard')
@@ -190,24 +214,23 @@ const HomePage = () => {
                 </ListItemIcon>
                 Administration
               </MenuItem>
-            )}
-            <MenuItem onClick={goToSettings}>
+            ),
+            <MenuItem key="settings" onClick={goToSettings}>
               <ListItemIcon>
                 <Settings size={16} />
               </ListItemIcon>
               Paramètres
-            </MenuItem>
+            </MenuItem>,
 
-            <Divider />
+            <Divider key="divider" />,
 
-            <MenuItem onClick={handleLogout} sx={{ color: 'error.main' }}>
+            <MenuItem key="logout" onClick={handleLogout} sx={{ color: 'error.main' }}>
               <ListItemIcon>
                 <LogOut size={16} color={theme.palette.error.main} />
               </ListItemIcon>
               Déconnexion
-            </MenuItem>
-          </>
-        )}
+            </MenuItem>,
+          ].filter(Boolean)}
       </Menu>
       <Container maxWidth="lg" sx={{ py: 4 }}>
         <Box
@@ -283,6 +306,7 @@ const HomePage = () => {
                     }}
                   >
                     <CardActionArea
+                      onClick={() => handleArticleClick(article)}
                       sx={{
                         flexGrow: 1,
                         display: 'flex',
@@ -335,6 +359,59 @@ const HomePage = () => {
                 ))}
           </Box>
         </Box>
+
+        {/* Article Detail Modal */}
+        <Dialog
+          open={articleModalOpen}
+          onClose={handleCloseArticleModal}
+          maxWidth="md"
+          fullWidth
+          PaperProps={{
+            sx: { borderRadius: 3 },
+          }}
+        >
+          {selectedArticle && (
+            <>
+              <DialogTitle
+                sx={{
+                  pb: 1,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <Chip
+                    label={selectedArticle.type}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {selectedArticle.updatedAt
+                      ? new Date(selectedArticle.updatedAt).toLocaleDateString('fr-FR', {
+                          day: '2-digit',
+                          month: 'long',
+                          year: 'numeric',
+                        })
+                      : ''}
+                  </Typography>
+                </Stack>
+                <IconButton onClick={handleCloseArticleModal} size="small">
+                  ×
+                </IconButton>
+              </DialogTitle>
+              <DialogContent>
+                <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ mt: 2 }}>
+                  {selectedArticle.title}
+                </Typography>
+                <Typography variant="body1" color="text.secondary" sx={{ whiteSpace: 'pre-wrap' }}>
+                  {selectedArticle.content}
+                </Typography>
+              </DialogContent>
+            </>
+          )}
+        </Dialog>
       </Container>
     </Box>
   )
