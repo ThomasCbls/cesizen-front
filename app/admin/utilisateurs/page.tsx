@@ -154,12 +154,18 @@ export default function UsersManagement() {
       setUserModal((prev) => ({ ...prev, loading: true }))
 
       if (userData.id) {
-        // Seul le rôle est modifiable via l'API
-        const updatedUser = await adminService.changeUserRole(userData.id, userData.role)
+        // Mettre à jour les informations de l'utilisateur
+        const updatedUser = await adminService.updateUser(userData.id, {
+          email: userData.email,
+          prenom: userData.prenom,
+          nom: userData.nom,
+          role: userData.role,
+          isActive: userData.isActive,
+        })
         setUsers((prev) =>
           prev.map((user) => (user.id === userData.id ? { ...user, ...updatedUser } : user)),
         )
-        showSnackbar('Rôle mis à jour avec succès', 'success')
+        showSnackbar('Utilisateur mis à jour avec succès', 'success')
       } else {
         showSnackbar("La création d'utilisateurs n'est pas disponible via l'API", 'warning')
       }

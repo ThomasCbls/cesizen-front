@@ -46,12 +46,6 @@ const RegisterViewPage = () => {
       return
     }
 
-    if (password.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères')
-      setIsLoading(false)
-      return
-    }
-
     if (password !== confirmPassword) {
       setError('Les mots de passe ne correspondent pas')
       setIsLoading(false)

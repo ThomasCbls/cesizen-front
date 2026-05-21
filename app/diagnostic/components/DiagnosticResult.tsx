@@ -16,7 +16,7 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material'
-import { AlertTriangle, Calendar, CheckCircle, Lightbulb, Target, TrendingUp } from 'lucide-react'
+import { AlertTriangle, CheckCircle, Lightbulb, Target, TrendingUp } from 'lucide-react'
 
 import type { DiagnosticResult } from '@/types'
 
@@ -84,6 +84,9 @@ export default function DiagnosticResult({
         </Typography>
         <Typography variant="body1" color="textSecondary">
           Voici l&apos;analyse de votre niveau de stress
+        </Typography>
+        <Typography variant="caption" color="textSecondary" className="mt-2 block">
+          Référence : {diagnosticId}
         </Typography>
       </Box>
 

@@ -208,6 +208,10 @@ class ApiClient {
             throw await this.createApiError(retryResponse)
           }
 
+          if (retryResponse.status === 204 || retryResponse.headers.get('content-length') === '0') {
+            return null as T
+          }
+
           const retryData = await retryResponse.json()
           if (config.enableDebug) {
             console.log(`[API Response - Retry] ${method} ${urlWithParams}`, retryData)
@@ -221,7 +225,17 @@ class ApiClient {
         throw await this.createApiError(response)
       }
 
+      // Réponse vide (204 No Content, typique des DELETE)
+      if (response.status === 204 || response.headers.get('content-length') === '0') {
+        return null as T
+      }
+
       // Parse de la réponse JSON
+      const contentType = response.headers.get('content-type')
+      if (!contentType?.includes('application/json')) {
+        return null as T
+      }
+
       const responseData = await response.json()
 
       if (config.enableDebug) {

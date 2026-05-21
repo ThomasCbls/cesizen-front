@@ -1,3 +1,5 @@
+import { config } from '@/lib/config'
+
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 // API Endpoints
@@ -8,6 +10,9 @@ export const endpoints = {
     logout: `${BASE_URL}/auth/logout`,
     register: `${BASE_URL}/utilisateurs`,
     refresh: `${BASE_URL}/auth/refresh`,
+    passwordPrompt: (action: string = 'change') =>
+      `${BASE_URL}/auth/password-prompt?action=${action}`,
+    changePassword: `${BASE_URL}/auth/change-password`,
   },
 
   // User routes
@@ -18,6 +23,9 @@ export const endpoints = {
     delete: (id: string) => `${BASE_URL}/utilisateurs/${id}`,
   },
 }
+
+// Re-export config token key for use in apiCall
+export { config }
 
 // Helper function for API calls
 export const apiCall = async (
@@ -34,7 +42,7 @@ export const apiCall = async (
       credentials: 'include',
     }
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null
+    const token = typeof window !== 'undefined' ? localStorage.getItem(config.authTokenKey) : null
     if (token) {
       options.headers = {
         ...options.headers,
@@ -53,6 +61,15 @@ export const apiCall = async (
       const errorData = await response.json().catch(() => ({ message: 'Erreur inconnue' }))
       console.error(`[API Error] ${response.status}:`, errorData)
       throw new Error(errorData.message || `Erreur ${response.status}`)
+    }
+
+    if (response.status === 204 || response.headers.get('content-length') === '0') {
+      return null
+    }
+
+    const contentType = response.headers.get('content-type')
+    if (!contentType?.includes('application/json')) {
+      return null
     }
 
     return await response.json()

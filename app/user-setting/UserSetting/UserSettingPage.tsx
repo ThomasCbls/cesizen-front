@@ -2,7 +2,6 @@
 
 import { useUser } from '@/app/hooks/useUser'
 import { apiCall, endpoints } from '@/app/utils/endpoint'
-import type { User } from '@/types'
 import {
   Alert,
   AppBar,
@@ -16,6 +15,7 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  LinearProgress,
   Snackbar,
   Stack,
   TextField,
@@ -23,9 +23,19 @@ import {
   Typography,
   useTheme,
 } from '@mui/material'
-import { ArrowLeft, Camera, Lock, Mail, Save, ShieldCheck, User as UserIcon } from 'lucide-react'
+import { ArrowLeft, Camera, Lock, Mail, Save, ShieldCheck, User as UserIcon, X } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+
+// Règles de validation du mot de passe (identiques à l'inscription)
+const PASSWORD_MIN_LENGTH = 12
+const PASSWORD_MAX_LENGTH = 255
+
+interface PasswordStrength {
+  level: 'weak' | 'medium' | 'strong' | 'very-strong'
+  message: string
+  score: number
+}
 
 const UserSettingPage = () => {
   const theme = useTheme()
@@ -40,16 +50,77 @@ const UserSettingPage = () => {
     new: '',
     confirm: '',
   })
-  console.log('🚀 ~ UserSettingPage ~ user:', user)
+  const [passwordErrors, setPasswordErrors] = useState<string[]>([])
+  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength | null>(null)
 
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' })
+
+  const validatePassword = (password: string): string[] => {
+    const errors: string[] = []
+
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      errors.push(`Le mot de passe doit contenir au minimum ${PASSWORD_MIN_LENGTH} caractères`)
+    }
+    if (password.length > PASSWORD_MAX_LENGTH) {
+      errors.push(`Le mot de passe ne doit pas dépasser ${PASSWORD_MAX_LENGTH} caractères`)
+    }
+    if (password !== password.trim()) {
+      errors.push("Le mot de passe ne doit pas avoir d'espaces en début ou en fin")
+    }
+
+    return errors
+  }
+
+  const calculatePasswordStrength = (password: string): PasswordStrength => {
+    let score = 0
+
+    if (password.length >= 12) score += 20
+    if (password.length >= 20) score += 10
+    if (/[a-z]/.test(password)) score += 10
+    if (/[A-Z]/.test(password)) score += 10
+    if (/[0-9]/.test(password)) score += 20
+    if (/[^a-zA-Z0-9]/.test(password)) score += 30
+
+    let level: PasswordStrength['level'] = 'weak'
+    let message = '❌ Faible'
+
+    if (score < 30) {
+      level = 'weak'
+      message = '❌ Faible'
+    } else if (score < 60) {
+      level = 'medium'
+      message = '⚠️  Moyen'
+    } else if (score < 90) {
+      level = 'strong'
+      message = '✅ Bon'
+    } else {
+      level = 'very-strong'
+      message = '🔒 Excellent'
+    }
+
+    return { level, message, score }
+  }
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value })
   }
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPasswordData({ ...passwordData, [e.target.name]: e.target.value })
+    const { name, value } = e.target
+    setPasswordData({ ...passwordData, [name]: value })
+
+    // Valider en temps réel si c'est le nouveau mot de passe
+    if (name === 'new') {
+      const errors = validatePassword(value)
+      setPasswordErrors(errors)
+
+      if (value.trim()) {
+        const strength = calculatePasswordStrength(value)
+        setPasswordStrength(strength)
+      } else {
+        setPasswordStrength(null)
+      }
+    }
   }
   const handleSaveProfile = async () => {
     if (!user?.id) return
@@ -106,14 +177,28 @@ const UserSettingPage = () => {
       return
     }
 
+    // Vérifier les erreurs de validation du nouveau mot de passe
+    const errors = validatePassword(passwordData.new)
+    if (errors.length > 0) {
+      setSnackbar({
+        open: true,
+        message: 'Veuillez corriger les erreurs du mot de passe.',
+        severity: 'error',
+      })
+      return
+    }
+
     try {
-      await apiCall(endpoints.users.update(user.id), 'PATCH', {
-        current_password: passwordData.current,
-        mot_de_passe: passwordData.new,
+      await apiCall(endpoints.auth.changePassword, 'POST', {
+        oldPassword: passwordData.current,
+        newPassword: passwordData.new,
+        confirmPassword: passwordData.confirm,
       })
 
       setSnackbar({ open: true, message: 'Mot de passe modifié avec succès.', severity: 'success' })
       setPasswordData({ current: '', new: '', confirm: '' })
+      setPasswordErrors([])
+      setPasswordStrength(null)
     } catch (error) {
       setSnackbar({
         open: true,
@@ -289,21 +374,79 @@ const UserSettingPage = () => {
                     ),
                   }}
                 />
-                <TextField
-                  fullWidth
-                  label="Nouveau mot de passe"
-                  type="password"
-                  name="new"
-                  value={passwordData.new}
-                  onChange={handlePasswordChange}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Lock size={18} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
+                <Box>
+                  <TextField
+                    fullWidth
+                    label="Nouveau mot de passe"
+                    type="password"
+                    name="new"
+                    value={passwordData.new}
+                    onChange={handlePasswordChange}
+                    error={passwordErrors.length > 0}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Lock size={18} />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+
+                  {/* Indicateur de force du mot de passe */}
+                  {passwordStrength && (
+                    <Box sx={{ mt: 1.5 }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Force du mot de passe
+                        </Typography>
+                        <Typography variant="caption" fontWeight="600">
+                          {passwordStrength.message}
+                        </Typography>
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={passwordStrength.score}
+                        sx={{
+                          height: 6,
+                          borderRadius: 3,
+                          backgroundColor: theme.palette.grey[200],
+                          '& .MuiLinearProgress-bar': {
+                            borderRadius: 3,
+                            backgroundColor:
+                              passwordStrength.level === 'weak'
+                                ? theme.palette.error.main
+                                : passwordStrength.level === 'medium'
+                                  ? theme.palette.warning.main
+                                  : passwordStrength.level === 'strong'
+                                    ? theme.palette.success.main
+                                    : theme.palette.success.dark,
+                          },
+                        }}
+                      />
+                    </Box>
+                  )}
+
+                  {/* Erreurs de validation */}
+                  {passwordErrors.length > 0 && (
+                    <Box sx={{ mt: 1.5 }}>
+                      <Stack spacing={0.5}>
+                        {passwordErrors.map((error, idx) => (
+                          <Box key={idx} sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+                            <X
+                              size={14}
+                              color={theme.palette.error.main}
+                              style={{ marginTop: 2 }}
+                            />
+                            <Typography variant="caption" color="error" sx={{ pt: 0.25 }}>
+                              {error}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Box>
+                  )}
+                </Box>
+
                 <TextField
                   fullWidth
                   label="Confirmer le nouveau mot de passe"
@@ -335,7 +478,12 @@ const UserSettingPage = () => {
                     variant="outlined"
                     color="primary"
                     onClick={handleSavePassword}
-                    disabled={!passwordData.current || !passwordData.new}
+                    disabled={
+                      !passwordData.current ||
+                      !passwordData.new ||
+                      passwordErrors.length > 0 ||
+                      passwordData.new !== passwordData.confirm
+                    }
                     sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 'bold' }}
                   >
                     Mettre à jour le mot de passe

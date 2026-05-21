@@ -26,7 +26,7 @@ describe('useUser', () => {
 
   it('charge le user depuis localStorage', () => {
     const user = makeUser()
-    localStorage.setItem('user', JSON.stringify(user))
+    localStorage.setItem('cesizen_user', JSON.stringify(user))
 
     const { result } = renderHook(() => useUser())
 
@@ -36,7 +36,7 @@ describe('useUser', () => {
   })
 
   it("expose l'id de l'utilisateur via userId", () => {
-    localStorage.setItem('user', JSON.stringify(makeUser()))
+    localStorage.setItem('cesizen_user', JSON.stringify(makeUser()))
 
     const { result } = renderHook(() => useUser())
 

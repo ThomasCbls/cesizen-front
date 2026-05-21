@@ -191,6 +191,20 @@ class AdminService {
     const data = await apiClient.patch<ApiUtilisateur>(`/admin/utilisateurs/${userId}/role`, {
       role: role.toLowerCase(),
     })
+
+    // Si le backend retourne 204 No Content, retourner un objet minimal
+    if (!data) {
+      return {
+        id: userId,
+        email: '',
+        prenom: '',
+        nom: '',
+        role,
+        isActive: true,
+        createdAt: new Date(),
+      }
+    }
+
     return mapUtilisateur(data)
   }
 
@@ -219,6 +233,20 @@ class AdminService {
       est_actif: userData.isActive,
     }
     const data = await apiClient.patch<ApiUtilisateur>(`/admin/utilisateurs/${userId}`, body)
+
+    // Si le backend retourne 204 No Content, construire l'objet depuis userData
+    if (!data) {
+      return {
+        id: userId,
+        email: userData.email!,
+        prenom: userData.prenom!,
+        nom: userData.nom!,
+        role: (userData.role || 'USER') as 'USER' | 'ADMIN',
+        isActive: userData.isActive !== undefined ? userData.isActive : true,
+        createdAt: new Date(),
+      }
+    }
+
     return mapUtilisateur(data)
   }
 

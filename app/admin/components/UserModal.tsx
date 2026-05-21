@@ -1,26 +1,26 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Button,
-  Stack,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Switch,
-  FormControlLabel,
   Alert,
   Box,
-  Typography,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  FormControl,
+  FormControlLabel,
   IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  Switch,
+  TextField,
+  Typography,
 } from '@mui/material'
-import { X, Save, User } from 'lucide-react'
+import { Save, User, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 
 interface User {
   id?: string
@@ -105,8 +105,6 @@ export default function UserModal({
 
     if (!isEdit && !formData.password) {
       newErrors.password = 'Le mot de passe est requis pour un nouvel utilisateur'
-    } else if (formData.password && formData.password.length < 6) {
-      newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères'
     }
 
     setErrors(newErrors)
@@ -188,7 +186,7 @@ export default function UserModal({
         <Stack spacing={3}>
           {!isEdit && (
             <Alert severity="info" sx={{ borderRadius: 2 }}>
-              Un email de bienvenue sera automatiquement envoyé à l'utilisateur avec ses
+              Un email de bienvenue sera automatiquement envoyé à l&apos;utilisateur avec ses
               identifiants.
             </Alert>
           )}
