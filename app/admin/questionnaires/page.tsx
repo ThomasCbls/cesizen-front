@@ -25,6 +25,17 @@ import { ConfirmDeleteModal, QuestionnaireModal, QuestionnaireTable } from '../c
 
 type Questionnaire = AdminQuestionnaire
 
+type QuestionnaireFormPayload = Partial<Omit<AdminQuestionnaire, 'questions'>> & {
+  questions?: Array<
+    Omit<AdminQuestionnaire['questions'][number], 'id' | 'options'> & {
+      id?: string
+      options: Array<
+        Omit<AdminQuestionnaire['questions'][number]['options'][number], 'id'> & { id?: string }
+      >
+    }
+  >
+}
+
 interface SnackbarState {
   open: boolean
   message: string
@@ -146,7 +157,7 @@ export default function QuestionnaireManagement() {
     }
   }
 
-  const handleSaveQuestionnaire = async (questionnaireData: Partial<Questionnaire>) => {
+  const handleSaveQuestionnaire = async (questionnaireData: QuestionnaireFormPayload) => {
     try {
       setQuestionnaireModal((prev) => ({ ...prev, loading: true }))
 

@@ -43,10 +43,19 @@ interface QuestionnaireForm {
   questions: Question[]
 }
 
+type QuestionnairePayload = Partial<Omit<AdminQuestionnaire, 'questions'>> & {
+  questions?: Array<
+    Omit<AdminQuestion, 'id' | 'options'> & {
+      id?: string
+      options: Array<Omit<AdminQuestionOption, 'id'> & { id?: string }>
+    }
+  >
+}
+
 interface QuestionnaireModalProps {
   open: boolean
   onClose: () => void
-  onSave: (questionnaire: Partial<AdminQuestionnaire>) => Promise<void> | void
+  onSave: (questionnaire: QuestionnairePayload) => Promise<void> | void
   questionnaire?: AdminQuestionnaire | null
   loading?: boolean
 }
