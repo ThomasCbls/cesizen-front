@@ -14,15 +14,18 @@ jest.mock('@/app/hooks/useUser', () => ({
   }),
 }))
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+
 const mockApiCall = jest.fn()
 jest.mock('@/app/utils/endpoint', () => ({
   apiCall: (...args: unknown[]) => mockApiCall(...args),
   endpoints: {
     auth: {
-      changePassword: 'http://localhost:3000/auth/change-password',
+      changePassword: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/auth/change-password`,
     },
     users: {
-      update: (id: string) => `http://localhost:3000/utilisateurs/${id}`,
+      update: (id: string) =>
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/utilisateurs/${id}`,
     },
   },
 }))
@@ -138,15 +141,11 @@ describe('UserSettingPage', () => {
     })
 
     await waitFor(() => {
-      expect(mockApiCall).toHaveBeenCalledWith(
-        'http://localhost:3000/auth/change-password',
-        'POST',
-        {
-          oldPassword: 'AncienMotDePasse1!',
-          newPassword: 'NouveauMotDePasse1!',
-          confirmPassword: 'NouveauMotDePasse1!',
-        },
-      )
+      expect(mockApiCall).toHaveBeenCalledWith(`${API_URL}/auth/change-password`, 'POST', {
+        oldPassword: 'AncienMotDePasse1!',
+        newPassword: 'NouveauMotDePasse1!',
+        confirmPassword: 'NouveauMotDePasse1!',
+      })
     })
   })
 

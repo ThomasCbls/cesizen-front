@@ -12,7 +12,7 @@ jest.mock('@/app/utils/endpoint', () => ({
   apiCall: jest.fn().mockResolvedValue({}),
   endpoints: {
     auth: {
-      logout: 'http://localhost:3000/auth/logout',
+      logout: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/auth/logout`,
     },
   },
 }))
