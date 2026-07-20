@@ -8,11 +8,13 @@ jest.mock('next/navigation', () => ({
 }))
 
 // Mock de apiCall et endpoints
+const API_URL = 'http://localhost:3000'
+
 jest.mock('@/app/utils/endpoint', () => ({
   apiCall: jest.fn().mockResolvedValue({}),
   endpoints: {
     auth: {
-      logout: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/auth/logout`,
+      logout: `${API_URL}/auth/logout`,
     },
   },
 }))

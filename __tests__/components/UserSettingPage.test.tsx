@@ -14,18 +14,17 @@ jest.mock('@/app/hooks/useUser', () => ({
   }),
 }))
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
-
 const mockApiCall = jest.fn()
+const API_URL = 'http://localhost:3000'
+
 jest.mock('@/app/utils/endpoint', () => ({
   apiCall: (...args: unknown[]) => mockApiCall(...args),
   endpoints: {
     auth: {
-      changePassword: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/auth/change-password`,
+      changePassword: `${API_URL}/auth/change-password`,
     },
     users: {
-      update: (id: string) =>
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/utilisateurs/${id}`,
+      update: (id: string) => `${API_URL}/utilisateurs/${id}`,
     },
   },
 }))

@@ -1,7 +1,7 @@
 // 🌐 CLIENT API ROBUSTE - CESIZen
 
 import type { ApiError, HttpMethod, RefreshTokenResponse } from '@/types'
-import { config } from './config'
+import { API_URL, AUTH_TOKEN_KEY, AUTH_USER_KEY, ENABLE_DEBUG } from './client-env'
 
 /**
  * Configuration de requête simplifiée
@@ -30,7 +30,7 @@ class ApiClient {
    */
   private getStoredToken(): string | null {
     if (typeof window === 'undefined') return null
-    return localStorage.getItem(config.authTokenKey)
+    return localStorage.getItem(AUTH_TOKEN_KEY)
   }
 
   /**
@@ -38,7 +38,7 @@ class ApiClient {
    */
   private setStoredToken(token: string): void {
     if (typeof window === 'undefined') return
-    localStorage.setItem(config.authTokenKey, token)
+    localStorage.setItem(AUTH_TOKEN_KEY, token)
   }
 
   /**
@@ -46,8 +46,8 @@ class ApiClient {
    */
   private removeStoredAuth(): void {
     if (typeof window === 'undefined') return
-    localStorage.removeItem(config.authTokenKey)
-    localStorage.removeItem(config.authUserKey)
+    localStorage.removeItem(AUTH_TOKEN_KEY)
+    localStorage.removeItem(AUTH_USER_KEY)
   }
 
   /**
@@ -177,12 +177,12 @@ class ApiClient {
 
     // Timeout controller
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), config.requestTimeout)
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s default timeout
     requestInit.signal = controller.signal
 
     try {
       // Logging en mode debug
-      if (config.enableDebug) {
+      if (ENABLE_DEBUG) {
         console.log(`[API Request] ${method} ${urlWithParams}`, {
           headers,
           data,
@@ -213,7 +213,7 @@ class ApiClient {
           }
 
           const retryData = await retryResponse.json()
-          if (config.enableDebug) {
+          if (ENABLE_DEBUG) {
             console.log(`[API Response - Retry] ${method} ${urlWithParams}`, retryData)
           }
           return retryData
@@ -238,7 +238,7 @@ class ApiClient {
 
       const responseData = await response.json()
 
-      if (config.enableDebug) {
+      if (ENABLE_DEBUG) {
         console.log(`[API Response] ${method} ${urlWithParams}`, responseData)
       }
 
@@ -317,7 +317,7 @@ class ApiClient {
 }
 
 // Instance globale du client API
-export const apiClient = new ApiClient(config.apiUrl)
+export const apiClient = new ApiClient(API_URL)
 
 // Export des méthodes pour faciliter l'utilisation
 export const { get, post, put, patch, delete: del, getPublic, postPublic } = apiClient

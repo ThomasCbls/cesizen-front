@@ -1,6 +1,6 @@
-import { config } from '@/lib/config'
+import { API_URL, AUTH_TOKEN_KEY } from '@/lib/client-env'
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
+const BASE_URL = API_URL
 
 // API Endpoints
 export const endpoints = {
@@ -24,9 +24,6 @@ export const endpoints = {
   },
 }
 
-// Re-export config token key for use in apiCall
-export { config }
-
 // Helper function for API calls
 export const apiCall = async (
   endpoint: string,
@@ -42,7 +39,7 @@ export const apiCall = async (
       credentials: 'include',
     }
 
-    const token = typeof window !== 'undefined' ? localStorage.getItem(config.authTokenKey) : null
+    const token = typeof window !== 'undefined' ? localStorage.getItem(AUTH_TOKEN_KEY) : null
     if (token) {
       options.headers = {
         ...options.headers,
